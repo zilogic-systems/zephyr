@@ -1,0 +1,6 @@
+if BOARD_ZKIT_ARM_1768
+
+config BOARD
+	default "zkit-arm-1768"
+
+endif # BOARD_ZKIT_ARM_1768

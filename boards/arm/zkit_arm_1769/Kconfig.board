@@ -1,0 +1,3 @@
+config BOARD_ZKIT_ARM_1769
+	bool "ZKIT ARM 1769"
+	depends on SOC_SERIES_LPC17XX

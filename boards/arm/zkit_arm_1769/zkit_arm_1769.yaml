@@ -1,0 +1,9 @@
+identifier: zkit_arm_1769
+name: ZKit ARM 1769
+type: mcu
+arch: arm
+ram: 32
+flash: 512
+toolchain:
+  - zephyr
+  - gccarmemb

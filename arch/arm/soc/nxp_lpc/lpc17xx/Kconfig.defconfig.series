@@ -1,0 +1,13 @@
+if SOC_SERIES_LPC17XX
+
+config SOC_SERIES
+	default "lpc17xx"
+
+config NUM_IRQS
+	int
+	# must be >= the highest interrupt number used
+	default 40
+
+gsource "arch/arm/soc/nxp_lpc/lpc17xx/Kconfig.defconfig.lp*"
+
+endif # SOC_SERIES_LPC17XX
