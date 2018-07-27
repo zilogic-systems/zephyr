@@ -1,0 +1,13 @@
+/dts-v1/;
+
+#include <nxp/nxp_lpc17xx.dtsi>
+
+/ {
+	model = "ZKit-ARM-1769 board";
+	compatible = "nxp,lpc17xx", "nxp,lpc";
+
+	chosen {
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+	};
+};
