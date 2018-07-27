@@ -1,0 +1,71 @@
+# Kconfig - MCUXpresso SDK pinmux for LPC
+#
+# Copyright (c) 2017, NXP
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+menuconfig PINMUX_LPC17XX
+	bool "LPC17XX pinmux driver"
+	default n
+	help
+	  Enable the LPC17XX pinmux driver.
+
+if PINMUX_LPC17XX
+
+config PINMUX_LPC17XX_PORT0
+	bool "Port 0"
+	default n
+	help
+	  Enable Port 0.
+
+config PINMUX_LPC17XX_PORT0_NAME
+	string "Pinmux Port 0 driver name"
+	depends on PINMUX_LPC17XX_PORT0
+	default "port0"
+
+config PINMUX_LPC17XX_PORT1
+	bool "Port 1"
+	default n
+	help
+	  Enable Port 1.
+
+config PINMUX_LPC17XX_PORT1_NAME
+	string "Pinmux Port 1 driver name"
+	depends on PINMUX_LPC17XX_PORT1
+	default "port1"
+
+config PINMUX_LPC17XX_PORT2
+	bool "Port 2"
+	default n
+	help
+	  Enable Port 2.
+
+config PINMUX_LPC17XX_PORT2_NAME
+	string "Pinmux Port 2 driver name"
+	depends on PINMUX_LPC17XX_PORT2
+	default "port2"
+
+config PINMUX_LPC17XX_PORT3
+	bool "Port 3"
+	default n
+	help
+	  Enable Port 3.
+
+config PINMUX_LPC17XX_PORT3_NAME
+	string "Pinmux Port 3 driver name"
+	depends on PINMUX_LPC17XX_PORT3
+	default "port3"
+
+config PINMUX_LPC17XX_PORT4
+	bool "Port 4"
+	default n
+	help
+	  Enable Port 4.
+
+config PINMUX_LPC17XX_PORT4_NAME
+	string "Pinmux Port 4 driver name"
+	depends on PINMUX_LPC17XX_PORT4
+	default "port4"
+
+endif # PINMUX_LPC17XX

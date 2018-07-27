@@ -4,4 +4,11 @@ config SOC
        string
        default "lpc1769"
 
+if PINMUX
+
+config PINMUX_LPC17XX
+	def_bool y
+
+endif # PINMUX
+
 endif
