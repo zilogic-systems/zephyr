@@ -1,6 +1,6 @@
-if BOARD_ZKIT_ARM_1768
+if BOARD_ZKIT_ARM_1769
 
 config BOARD
-	default "zkit-arm-1768"
+	default "Zkit-ARM-1769"
 
-endif # BOARD_ZKIT_ARM_1768
+endif # BOARD_ZKIT_ARM_1769
