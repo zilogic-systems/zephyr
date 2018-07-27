@@ -1,0 +1,7 @@
+if SOC_LPC1769
+
+config SOC
+       string
+       default "lpc1769"
+
+endif
