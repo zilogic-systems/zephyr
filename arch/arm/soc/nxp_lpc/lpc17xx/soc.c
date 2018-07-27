@@ -21,11 +21,11 @@
 /* desired target frequency of the core */
 #define FREQUENCY			120000000ul
 
-static void flash_latency(uint32_t frequency)
+static void flash_latency(u32_t frequency)
 {
-	uint32_t wait_states;
+	u32_t wait_states;
 
-	wait_states = frequency / 20000000;		// 1 CLK per 20MHz
+	wait_states = frequency / 20000000;		/* 1 CLK per 20MHz */
 
 	/* 5 CLKs is the highest reasonable value, works for up to 120MHz */
 	if (wait_states > 5)
@@ -35,21 +35,24 @@ static void flash_latency(uint32_t frequency)
 }
 
 /* Power-up System Osc. */
-static void osc_sel()
+static void osc_sel(void)
 {
-	uint32_t value;
+	u32_t value;
 
 	value = sys_read32(PCLKSEL1);
-	value |= PCLKSEL1_PCLK_GPIOINT_DIV1  |	   \
-		 PCLKSEL1_PCLK_PCB_DIV1      |     \
+	value |= PCLKSEL1_PCLK_GPIOINT_DIV1  |
+		 PCLKSEL1_PCLK_PCB_DIV1      |
 		 PCLKSEL1_PCLK_SYSCON_DIV1;
 	sys_write32(value, PCLKSEL1);
-	sys_clear_bit(SCS, OSCRANGE); //Clock source Rannge as 20Mhz
-	sys_set_bit(SCS, OSCEN); // Enable Main OSC
+	sys_clear_bit(SCS, OSCRANGE); /* Clock source Rannge as 20Mhz */
+	sys_set_bit(SCS, OSCEN);      /* Enable Main OSC */
 	flash_latency(FREQUENCY);
-	while(sys_test_bit(SCS, OSCSTAT) == 0); //Wait for main OSC to start up
-	sys_set_bit(CLKSRCSEL, 0); // Clock soure selection as main oscillator
-	sys_clear_bit(CLKSRCSEL, 1); // Clock soure selection as main oscillator
+	 /* Wait for main OSC to start up */
+	while (sys_test_bit(SCS, OSCSTAT) == 0);
+	/* Clock soure selection as main oscillator */
+	sys_set_bit(CLKSRCSEL, 0);
+	/* Clock soure selection as main oscillator */
+	sys_clear_bit(CLKSRCSEL, 1);
 
 }
 
@@ -59,24 +62,33 @@ static void pll0_feed(void)
 	sys_write32(PLL0FEED_SECOND, PLL0FEED);
 }
 
-static void pll_config(uint32_t crystal, uint32_t frequency)
+static void pll_config(u32_t crystal, u32_t frequency)
 {
-	uint32_t prediv, mul, corediv, fcco, core_frequency;
-	uint32_t best_prediv = 0, best_mul = 0, best_corediv = 0, best_core_frequency = 0;
+	u32_t prediv;
+	u32_t mul;
+	u32_t corediv;
+	u32_t fcco;
+	u32_t core_frequency;
+	u32_t best_prediv = 0;
+	u32_t best_mul = 0;
+	u32_t best_corediv = 0;
+	u32_t best_core_frequency = 0;
 
-	for (prediv = 1; prediv <= 32; prediv++)	// NSEL0 in [1; 32]
-		for (mul = 6; mul <= 512; mul++)	// MSEL0 in [5; 512]
-		{
+	/* NSEL0 in [1; 32] */
+	for (prediv = 1; prediv <= 32; prediv++)
+		/* MSEL0 in [5; 512] */
+		for (mul = 6; mul <= 512; mul++) {
 			/* calculate PLL output frequency */
 			fcco = 2 * mul * crystal / prediv;
 
-			/* skip invalid settings - fcco must be in [275M; 550M] */
+			/* skip invalid settings - fcco must be in
+			 * [275M; 550M]
+			 */
 			if ((fcco < 275000000) || (fcco > 550000000))
 				continue;
 
 			/*CCLKSEL in [1; 256] */
-			for (corediv = 1; corediv <= 256; corediv++)
-			{
+			for (corediv = 1; corediv <= 256; corediv++) {
 				/* calculate core frequency */
 				core_frequency = fcco / corediv;
 
@@ -84,9 +96,10 @@ static void pll_config(uint32_t crystal, uint32_t frequency)
 				if (core_frequency > frequency)
 					continue;
 
-				/* is this configuration better than previous one? */
-				if (core_frequency > best_core_frequency)
-				{
+				/* is this configuration better than
+				 * previous one?
+				 */
+				if (core_frequency > best_core_frequency) {
 					/* save values */
 					best_core_frequency = core_frequency;
 					best_prediv = prediv;
@@ -100,17 +113,19 @@ static void pll_config(uint32_t crystal, uint32_t frequency)
 			}
 		}
 
-	// set NSEL0 and MSEL0
-	sys_write32(((best_prediv - 1) << PLL0CFG_NSEL0) | \
+	/* set NSEL0 and MSEL0 */
+	sys_write32(((best_prediv - 1) << PLL0CFG_NSEL0) |
 		    ((best_mul - 1) << PLL0CFG_MSEL0_0_bit), PLL0CFG);
-	pll0_feed();			// validate change in PLL0CFG
+	pll0_feed();			/* validate change in PLL0CFG */
 	sys_set_bit(PLL0CON, PLLE0);
-	pll0_feed();			// validate change in PLL0CON
-	// set core clock divider CCLKSEL
+	pll0_feed();			/* validate change in PLL0CON */
+	/* set core clock divider CCLKSEL */
 	sys_write32((best_corediv - 1) << CCLKSEL_bit, CCLKCFG);
-	while(sys_test_bit(SCS, OSCSTAT) == 0); // wait for PLL0 lock
-	sys_set_bit(PLL0CON, PLLC0);            // connect PLL0 as clock source
-	pll0_feed();			        // validate connection
+	 /* wait for PLL0 lock */
+	while (sys_test_bit(SCS, OSCSTAT) == 0);
+	/* connect PLL0 as clock source */
+	sys_set_bit(PLL0CON, PLLC0);
+	pll0_feed();	       /* validate connection */
 
 }
 

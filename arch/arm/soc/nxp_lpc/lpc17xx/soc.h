@@ -51,7 +51,7 @@ enum sysconfig_reg {
 
 };
 
-enum scs_config{
+enum scs_config {
 	OSCRANGE = 4,
 	OSCEN = 5,
 	OSCSTAT = 6
@@ -142,29 +142,29 @@ enum pconp_config {
 	PCONP_MASK	= 1
 };
 
-enum flashcfg_config{
+enum flashcfg_config {
 	FLASHTIM = 12,
 	RESERVED_value = 0x3A
 };
 
-enum pll0cfg_config{
+enum pll0cfg_config {
 	PLL0CFG_MSEL0_0_bit = 0,
 	PLL0CFG_NSEL0 = 16,
 	PLL0CFG_MSEL0 = (1 << PLL0CFG_MSEL0_0_bit)
 };
 
 
-enum pllofeed_config{
+enum pllofeed_config {
 
 	PLL0FEED_FIRST	= 0xAA,
 	PLL0FEED_SECOND	= 0x55
 };
 
-enum cclkcfg_config{
+enum cclkcfg_config {
 	CCLKSEL_bit = 0
 };
 
-enum pll0con_config{
+enum pll0con_config {
 	PLLE0 = 0,
 	PLLC0 = 1
 };
