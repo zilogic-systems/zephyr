@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, NXP
+ * Copyright (c) 2018, Zilogic Systems
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -11,23 +11,34 @@
 #include <sys_io.h>
 #include <misc/__assert.h>
 
-struct pinmux_lpc17xx_config {
-	u32_t port_no;
-};
 
-static const u32_t pin_map[5] = {
-	0x7FFF8FFF,
-	0xFFFFC713,
-	0x3FFF,
-	0x6000000,
-	0x30000000
-};
-
-#define PINMUX_BASE_ADDR 0x4002C000
+#define PINMUX_BASE_ADDR CONFIG_PINMUX_BASE_ADDR
+#define PINMUX_MAX_PORT 5
 
 #define PINMUX_PINSEL_OFFSET 0x0
 #define PINMUX_PINMODE_OFFSET 0x040
 #define PINMUX_PINMODE_OD_OFFSET 0x068
+
+#define GET_PORT(pin) (((pin / 32) < PINMUX_MAX_PORT) ? pin / 32 : -1)
+#define GET_PIN(port, pin) (pin - (port * 32))
+#define GET_PINSEL_ARG_VALUE(value) ((value >> 0) & (0x3))
+#define GET_PINMODE_ARG_VALUE(value) ((value >> 2) & (0x3))
+#define GET_PINMODE_OD_ARG_VALUE(value) ((value >> 4) & (0x1))
+
+#define GET_PINSEL_REG_VALUE(reg_value, pos)                          \
+				((reg_value >> pos) & (0x3))
+#define GET_PINMODE_REG_VALUE(reg_value, pos)                         \
+				(((reg_value >> pos) & (0x3)) << 2)
+#define GET_PINMODE_OD_REG_VALUE(reg_value, pin)                      \
+				(((reg_value >> pin) & (0x1)) << 4)
+
+static const u32_t pin_map[PINMUX_MAX_PORT] = {
+	0x7FFF8FFF,     /* 0b01111111111111111000111111111111 */
+	0xFFFFC713,     /* 0b11111111111111111100011100010011 */
+	0x3FFF,         /* 0b00000000000000000011111111111111 */
+	0x6000000,      /* 0b00000110000000000000000000000000 */
+	0x30000000      /* 0b00110000000000000000000000000000 */
+};
 
 static u32_t pinmux_pinsel_addr(u8_t port, u8_t pin)
 {
@@ -60,19 +71,11 @@ static u32_t pinmux_opendrain_addr(u8_t port)
 
 static bool check_pin_available(u8_t port, u8_t pin)
 {
+	if (port == -1)
+		return 0;
+
 	return (pin_map[port] >> pin) & 0x01;
 }
-
-#define GET_PINSEL_ARG_VALUE(value) ((value >> 0) & (0x3))
-#define GET_PINMODE_ARG_VALUE(value) ((value >> 2) & (0x3))
-#define GET_PINMODE_OD_ARG_VALUE(value) ((value >> 4) & (0x1))
-
-#define GET_PINSEL_REG_VALUE(reg_value, pos)                          \
-				((reg_value >> pos) & (0x3))
-#define GET_PINMODE_REG_VALUE(reg_value, pos)                         \
-				(((reg_value >> pos) & (0x3)) << 2)
-#define GET_PINMODE_OD_REG_VALUE(reg_value, pin)                      \
-				(((reg_value >> pin) & (0x1)) << 4)
 
 static inline void sys_set_bits(u32_t address,
 				u32_t mask, u32_t shift, u32_t data)
@@ -87,59 +90,61 @@ static inline void sys_set_bits(u32_t address,
 
 static int pinmux_lpc17xx_set(struct device *dev, u32_t pin, u32_t func)
 {
-	const struct pinmux_lpc17xx_config *config = dev->config->config_info;
-	u32_t port = config->port_no;
+	ARG_UNUSED(dev);
+	u32_t cport = GET_PORT(pin);
+	u32_t cpin = GET_PIN(cport, pin);
 	u8_t pos = 0;
 	u8_t pinsel;
 	u8_t pinmode;
 	bool pinmode_od;
 
-	__ASSERT((check_pin_available(port, pin) == 0), "Pinmux Not Available");
+	__ASSERT((check_pin_available(cport, cpin) == 0), "Pinmux Not Available");
 
 	pinsel = GET_PINSEL_ARG_VALUE(func);
 	pinmode = GET_PINMODE_ARG_VALUE(func);
 	pinmode_od = GET_PINMODE_OD_ARG_VALUE(func);
 
-	if (pin < 16)
-		pos = pin * 2;
+	if (cpin < 16)
+		pos = cpin * 2;
 	else
-		pos = (pin - 16) * 2;
+		pos = (cpin - 16) * 2;
 
-	sys_set_bits(pinmux_pinsel_addr(port, pin), 3, pos, pinsel);
-	sys_set_bits(pinmux_pinmode_addr(port, pin), 3, pos, pinmode);
+	sys_set_bits(pinmux_pinsel_addr(cport, cpin), 3, pos, pinsel);
+	sys_set_bits(pinmux_pinmode_addr(cport, cpin), 3, pos, pinmode);
 
 	if (pinmode_od)
-		sys_set_bit(pinmux_opendrain_addr(port), pin);
+		sys_set_bit(pinmux_opendrain_addr(cport), cpin);
 	else
-		sys_clear_bit(pinmux_opendrain_addr(port), pin);
+		sys_clear_bit(pinmux_opendrain_addr(cport), cpin);
 
 	return 0;
 }
 
 static int pinmux_lpc17xx_get(struct device *dev, u32_t pin, u32_t *func)
 {
-	const struct pinmux_lpc17xx_config *config = dev->config->config_info;
-	u32_t port = config->port_no;
+	ARG_UNUSED(dev);
+	u32_t cport = GET_PORT(pin);
+	u32_t cpin = GET_PIN(cport, pin);
 	u32_t addr;
 	u8_t pos = 0;
 
-	__ASSERT((check_pin_available(port, pin) == 0), "Pinmux Not Available");
+	__ASSERT((check_pin_available(cport, cpin) == 0), "Pinmux Not Available");
 
 	*func = 0;
 
-	if (pin < 16)
-		pos = pin * 2;
+	if (cpin < 16)
+		pos = cpin * 2;
 	else
-		pos = (pin - 16) * 2;
+		pos = (cpin - 16) * 2;
 
-	addr = pinmux_pinsel_addr(port, pin);
+	addr = pinmux_pinsel_addr(cport, cpin);
 	*func += GET_PINSEL_REG_VALUE(sys_read32(addr), pos);
 
-	addr = pinmux_pinmode_addr(port, pin);
+	addr = pinmux_pinmode_addr(cport, cpin);
 	*func += GET_PINMODE_REG_VALUE(sys_read32(addr), pos);
 
-	addr = pinmux_opendrain_addr(port);
-	*func += GET_PINMODE_OD_REG_VALUE(sys_read32(addr), pin);
+	addr = pinmux_opendrain_addr(cport);
+	*func += GET_PINMODE_OD_REG_VALUE(sys_read32(addr), cpin);
 
 	return 0;
 }
@@ -156,6 +161,7 @@ static int pinmux_lpc17xx_input(struct device *dev, u32_t pin, u8_t func)
 
 static int pinmux_lpc17xx_init(struct device *dev)
 {
+	ARG_UNUSED(dev);
 	return 0;
 }
 
@@ -166,62 +172,11 @@ static const struct pinmux_driver_api pinmux_lpc17xx_driver_api = {
 	.input = pinmux_lpc17xx_input,
 };
 
-#ifdef CONFIG_PINMUX_LPC17XX_PORT0
-static const struct pinmux_lpc17xx_config pinmux_lpc17xx_port0_config = {
-	.port_no = 0,
-};
+#ifdef CONFIG_PINMUX_LPC17XX
 
-DEVICE_AND_API_INIT(pinmux_port0, CONFIG_PINMUX_LPC17XX_PORT0_NAME,
+DEVICE_AND_API_INIT(pinmux_dev, CONFIG_PINMUX_NAME,
 		    &pinmux_lpc17xx_init,
-		    NULL, &pinmux_lpc17xx_port0_config,
+		    NULL, NULL,
 		    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
 		    &pinmux_lpc17xx_driver_api);
-#endif /* CONFIG_PINMUX_LPC17XX_LPC_PORT0 */
-
-#ifdef CONFIG_PINMUX_LPC17XX_PORT1
-static const struct pinmux_lpc17xx_config pinmux_lpc17xx_port1_config = {
-	.port_no = 1,
-};
-
-DEVICE_AND_API_INIT(pinmux_port1, CONFIG_PINMUX_LPC17XX_PORT1_NAME,
-		    &pinmux_lpc17xx_init,
-		    NULL, &pinmux_lpc17xx_port1_config,
-		    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
-		    &pinmux_lpc17xx_driver_api);
-#endif /* CONFIG_PINMUX_LPC17XX_LPC_PORT1 */
-
-#ifdef CONFIG_PINMUX_LPC17XX_PORT2
-static const struct pinmux_lpc17xx_config pinmux_lpc17xx_port2_config = {
-	.port_no = 2,
-};
-
-DEVICE_AND_API_INIT(pinmux_port2, CONFIG_PINMUX_LPC17XX_PORT1_NAME,
-		    &pinmux_lpc17xx_init,
-		    NULL, &pinmux_lpc17xx_port2_config,
-		    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
-		    &pinmux_lpc17xx_driver_api);
-#endif /* CONFIG_PINMUX_LPC17XX_LPC_PORT2 */
-
-#ifdef CONFIG_PINMUX_LPC17XX_PORT1
-static const struct pinmux_lpc17xx_config pinmux_lpc17xx_port3_config = {
-	.port_no = 3,
-};
-
-DEVICE_AND_API_INIT(pinmux_port3, CONFIG_PINMUX_LPC17XX_PORT1_NAME,
-		    &pinmux_lpc17xx_init,
-		    NULL, &pinmux_lpc17xx_port3_config,
-		    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
-		    &pinmux_lpc17xx_driver_api);
-#endif /* CONFIG_PINMUX_LPC17XX_LPC_PORT3 */
-
-#ifdef CONFIG_PINMUX_LPC17XX_PORT1
-static const struct pinmux_lpc17xx_config pinmux_lpc17xx_port4_config = {
-	.port_no = 4,
-};
-
-DEVICE_AND_API_INIT(pinmux_port4, CONFIG_PINMUX_LPC17XX_PORT1_NAME,
-		    &pinmux_lpc17xx_init,
-		    NULL, &pinmux_lpc17xx_port4_config,
-		    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
-		    &pinmux_lpc17xx_driver_api);
-#endif /* CONFIG_PINMUX_LPC17XX_LPC_PORT1 */
+#endif /* CONFIG_PINMUX_LPC17XX */

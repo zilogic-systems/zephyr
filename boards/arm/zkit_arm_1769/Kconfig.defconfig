@@ -3,14 +3,4 @@ if BOARD_ZKIT_ARM_1769
 config BOARD
 	default "Zkit-ARM-1769"
 
-if PINMUX_LPC17XX
-
-config PINMUX_LPC17XX_PORT0
-	def_bool y
-
-config PINMUX_LPC17XX_PORT1
-	def_bool y
-
-endif # PINMUX_MCUX_LPC
-
 endif # BOARD_ZKIT_ARM_1769
