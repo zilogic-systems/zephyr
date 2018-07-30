@@ -11,28 +11,29 @@
 #include <sys_io.h>
 #include <misc/__assert.h>
 
-
 #define PINMUX_BASE_ADDR CONFIG_PINMUX_BASE_ADDR
 #define PINMUX_MAX_PORT 5
+#define PINMUX_MAX_PIN 32
+#define MAX_PINS (PINMUX_MAX_PORT * PINMUX_MAX_PIN)
 
 #define PINMUX_PINSEL_OFFSET 0x0
 #define PINMUX_PINMODE_OFFSET 0x040
 #define PINMUX_PINMODE_OD_OFFSET 0x068
 
-#define GET_PORT(pin) (((pin / 32) < PINMUX_MAX_PORT) ? pin / 32 : -1)
-#define GET_PIN(port, pin) (pin - (port * 32))
-#define GET_PINSEL_ARG_VALUE(value) ((value >> 0) & (0x3))
-#define GET_PINMODE_ARG_VALUE(value) ((value >> 2) & (0x3))
-#define GET_PINMODE_OD_ARG_VALUE(value) ((value >> 4) & (0x1))
+#define GET_PORT(pin) ((pin) / 32)
+#define GET_PIN(pin) ((pin) % 32)
+#define GET_PINSEL_ARG_VALUE(value) (((value) >> 0) & 0x3)
+#define GET_PINMODE_ARG_VALUE(value) (((value) >> 2) & 0x3)
+#define GET_PINMODE_OD_ARG_VALUE(value) (((value) >> 4) & 0x1)
 
 #define GET_PINSEL_REG_VALUE(reg_value, pos)                          \
-				((reg_value >> pos) & (0x3))
+				(((reg_value) >> (pos)) & 0x3)
 #define GET_PINMODE_REG_VALUE(reg_value, pos)                         \
-				(((reg_value >> pos) & (0x3)) << 2)
+				((((reg_value) >> (pos)) & 0x3) << 2)
 #define GET_PINMODE_OD_REG_VALUE(reg_value, pin)                      \
-				(((reg_value >> pin) & (0x1)) << 4)
+				((((reg_value) >> (pin)) & 0x1) << 4)
 
-static const u32_t pin_map[PINMUX_MAX_PORT] = {
+static const u32_t pin_valid_bmp[PINMUX_MAX_PORT] = {
 	0x7FFF8FFF,     /* 0b01111111111111111000111111111111 */
 	0xFFFFC713,     /* 0b11111111111111111100011100010011 */
 	0x3FFF,         /* 0b00000000000000000011111111111111 */
@@ -69,12 +70,18 @@ static u32_t pinmux_opendrain_addr(u8_t port)
 	return addr;
 }
 
-static bool check_pin_available(u8_t port, u8_t pin)
+static bool check_pin_valid(u32_t pin)
 {
-	if (port == -1)
-		return 0;
+	u8_t cpin;
+	u8_t cport;
 
-	return (pin_map[port] >> pin) & 0x01;
+	if (pin > MAX_PINS)
+		return 1;
+
+	cport = GET_PORT(pin);
+	cpin = GET_PIN(pin);
+
+	return ~((pin_valid_bmp[cport] >> cpin) & 0x01);
 }
 
 static inline void sys_set_bits(u32_t address,
@@ -91,23 +98,23 @@ static inline void sys_set_bits(u32_t address,
 static int pinmux_lpc17xx_set(struct device *dev, u32_t pin, u32_t func)
 {
 	ARG_UNUSED(dev);
-	u32_t cport = GET_PORT(pin);
-	u32_t cpin = GET_PIN(cport, pin);
+	u8_t cport;
+	u8_t cpin;
 	u8_t pos = 0;
 	u8_t pinsel;
 	u8_t pinmode;
 	bool pinmode_od;
 
-	__ASSERT((check_pin_available(cport, cpin) == 0), "Pinmux Not Available");
+	__ASSERT(check_pin_valid(pin), "Pinmux Not Available");
 
+	cport = GET_PORT(pin);
+	cpin = GET_PIN(pin);
+	
 	pinsel = GET_PINSEL_ARG_VALUE(func);
 	pinmode = GET_PINMODE_ARG_VALUE(func);
 	pinmode_od = GET_PINMODE_OD_ARG_VALUE(func);
 
-	if (cpin < 16)
-		pos = cpin * 2;
-	else
-		pos = (cpin - 16) * 2;
+	pos = (cpin * 2) % 32;
 
 	sys_set_bits(pinmux_pinsel_addr(cport, cpin), 3, pos, pinsel);
 	sys_set_bits(pinmux_pinmode_addr(cport, cpin), 3, pos, pinmode);
@@ -123,28 +130,28 @@ static int pinmux_lpc17xx_set(struct device *dev, u32_t pin, u32_t func)
 static int pinmux_lpc17xx_get(struct device *dev, u32_t pin, u32_t *func)
 {
 	ARG_UNUSED(dev);
-	u32_t cport = GET_PORT(pin);
-	u32_t cpin = GET_PIN(cport, pin);
+	u8_t cport;
+	u8_t cpin;
 	u32_t addr;
 	u8_t pos = 0;
 
-	__ASSERT((check_pin_available(cport, cpin) == 0), "Pinmux Not Available");
+	__ASSERT(check_pin_valid(pin), "Pinmux Not Available");
 
+	cport = GET_PORT(pin);
+	cpin = GET_PIN(pin);
+	
 	*func = 0;
 
-	if (cpin < 16)
-		pos = cpin * 2;
-	else
-		pos = (cpin - 16) * 2;
+	pos = (cpin * 2) % 32;
 
 	addr = pinmux_pinsel_addr(cport, cpin);
-	*func += GET_PINSEL_REG_VALUE(sys_read32(addr), pos);
+	*func |= GET_PINSEL_REG_VALUE(sys_read32(addr), pos);
 
 	addr = pinmux_pinmode_addr(cport, cpin);
-	*func += GET_PINMODE_REG_VALUE(sys_read32(addr), pos);
+	*func |= GET_PINMODE_REG_VALUE(sys_read32(addr), pos);
 
 	addr = pinmux_opendrain_addr(cport);
-	*func += GET_PINMODE_OD_REG_VALUE(sys_read32(addr), cpin);
+	*func |= GET_PINMODE_OD_REG_VALUE(sys_read32(addr), cpin);
 
 	return 0;
 }
