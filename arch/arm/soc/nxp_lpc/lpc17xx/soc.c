@@ -16,10 +16,6 @@
 #include <cortex_m/exc.h>
 #include <sys_io.h>
 
-/* quartz crystal resonator which is connected to the chip */
-#define CRYSTAL	                        12000000ul
-/* desired target frequency of the core */
-#define FREQUENCY			120000000ul
 
 static void flash_latency(u32_t frequency)
 {
@@ -46,7 +42,7 @@ static void osc_sel(void)
 	sys_write32(value, PCLKSEL1);
 	sys_clear_bit(SCS, OSCRANGE); /* Clock source Rannge as 20Mhz */
 	sys_set_bit(SCS, OSCEN);      /* Enable Main OSC */
-	flash_latency(FREQUENCY);
+	flash_latency(CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC);
 	 /* Wait for main OSC to start up */
 	while (sys_test_bit(SCS, OSCSTAT) == 0);
 	/* Clock soure selection as main oscillator */
@@ -141,7 +137,7 @@ static void pll_config(u32_t crystal, u32_t frequency)
 static ALWAYS_INLINE void clkInit(void)
 {
 	osc_sel();
-	pll_config(CRYSTAL, FREQUENCY);
+	pll_config(CONFIG_SYS_CRYSTAL_FREQ, CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC);
 }
 
 /**
