@@ -7,3 +7,7 @@ config SOC_LPC1769
 	select CPU_CORTEX_M3
 
 endchoice
+
+config SYS_CRYSTAL_FREQ
+       int "Crystal frequency"
+       default "12000000"
