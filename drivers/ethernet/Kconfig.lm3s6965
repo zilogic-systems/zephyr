@@ -1,0 +1,57 @@
+# Kconfig - ETH_LM3S6965 Ethernet driver configuration options
+
+#
+# Copyright (c) 2018 Zilogic Systems
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+menuconfig ETH_LM3S6965
+	bool "LM3S6965 Ethernet Controller"
+	depends on NET_L2_ETHERNET
+	default n
+	help
+	  LM3S6965 on-board Ethernet Controller
+
+if ETH_LM3S6965
+config ETH_LM3S6965_NAME
+	string "Driver's name"
+	default "ETH_0"
+
+config ETH_LM3S6965_MAC0
+        hex "MAC Address Byte 0"
+        default 0
+        help
+          This is the byte 0 of the MAC address.
+
+config ETH_LM3S6965_MAC1
+        hex "MAC Address Byte 1"
+        default 0
+        help
+          This is the byte 1 of the MAC address.
+
+config ETH_LM3S6965_MAC2
+        hex "MAC Address Byte 2"
+        default 0
+        help
+          This is the byte 2 of the MAC address.
+
+config ETH_LM3S6965_MAC3
+        hex "MAC Address Byte 3"
+        default 0
+        help
+          This is the byte 3 of the MAC address.
+
+config ETH_LM3S6965_MAC4
+        hex "MAC Address Byte 4"
+        default 0
+        help
+          This is the byte 4 of the MAC address.
+
+config ETH_LM3S6965_MAC5
+        hex "MAC Address Byte 5"
+        default 0
+        help
+          This is the byte 5 of the MAC address.
+
+endif #ETH_LM3S6965

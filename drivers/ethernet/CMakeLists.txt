@@ -4,6 +4,8 @@ zephyr_sources_ifdef(CONFIG_ETH_SAM_GMAC
 	eth_sam_gmac.c
 	phy_sam_gmac.c
 	)
+
+zephyr_sources_ifdef(CONFIG_ETH_LM3S6965	eth_lm3s6965.c)
 zephyr_sources_ifdef(CONFIG_ETH_DW		eth_dw.c)
 zephyr_sources_ifdef(CONFIG_ETH_ENC28J60	eth_enc28j60.c)
 zephyr_sources_ifdef(CONFIG_ETH_MCUX		eth_mcux.c)
