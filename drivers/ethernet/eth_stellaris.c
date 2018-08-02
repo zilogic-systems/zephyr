@@ -161,6 +161,23 @@ static int eth_stellaris_send(struct net_if *iface, struct net_pkt *pkt)
 	return 0;
 }
 
+void eth_rx_error_out(char *err_msg, struct net_if *iface)
+{
+	u32_t val;
+	struct device *dev = net_if_get_device(iface);
+	struct eth_stellaris_runtime *dev_data = DEV_DATA(dev);
+
+	SYS_LOG_ERR(err_msg);
+	eth_stats_update_errors_rx(iface);
+
+	/* Clear the rx_frame buffer,
+	 * otherwise it could lead to underflow errors
+	 */
+	sys_write32(0x0, REG_MACRCTL);
+	sys_write32(BIT_MACRCTL_RSTFIFO, REG_MACRCTL);
+	val = BIT_MACRCTL_BADCRC | BIT_MACRCTL_RXEN;
+	sys_write32(val, REG_MACRCTL);
+}
 void eth_stellaris_rx(struct device *dev)
 {
 	struct net_pkt *pkt = NULL;
@@ -173,8 +190,7 @@ void eth_stellaris_rx(struct device *dev)
 	/* Obtain the packet to be populated */
 	pkt = net_pkt_get_reserve_rx(0, K_NO_WAIT);
 	if (!pkt) {
-		SYS_LOG_ERR("Could not allocate packet");
-		eth_stats_update_errors_rx(iface);
+		eth_rx_error_out("Could not allocate pkt", iface);
 		return;
 	}
 
@@ -182,14 +198,19 @@ void eth_stellaris_rx(struct device *dev)
 	reg_val = sys_read32(REG_MACDATA);
 	pktlen = reg_val & 0x0000ffff;
 	if (!net_pkt_append(pkt, 2, (u8_t *)&reg_val + 2, K_NO_WAIT)) {
-		goto pkt_err;
+		eth_rx_error_out("Failed to append data to buffer", iface);
+		net_pkt_unref(pkt);
+		return;
 	}
 
 	/* Read the rest of words, minus the partial word and FCS byte */
 	for (bytes_left = pktlen - 4; bytes_left > 7; bytes_left -= 4) {
 		reg_val = sys_read32(REG_MACDATA);
 		if (!net_pkt_append(pkt, 4, (u8_t *)&reg_val, K_NO_WAIT)) {
-			goto pkt_err;
+			eth_rx_error_out("Failed to append data to buffer",
+					 iface);
+			net_pkt_unref(pkt);
+			return;
 		}
 	}
 
@@ -204,7 +225,10 @@ void eth_stellaris_rx(struct device *dev)
 		/* Read the the partial word */
 		if (!net_pkt_append(pkt, bytes_left - 4,
 				    (u8_t *)&reg_val, K_NO_WAIT)) {
-			goto pkt_err;
+			eth_rx_error_out("Failed to append data to buffer",
+					 iface);
+			net_pkt_unref(pkt);
+			return;
 		}
 		bytes_left -= 4;
 	}
@@ -221,23 +245,9 @@ void eth_stellaris_rx(struct device *dev)
 
 	ret = net_recv_data(iface, pkt);
 	if (ret < 0) {
-		goto frame_err;
+		eth_rx_error_out("Failed to place frame in RX Queue", iface);
+		net_pkt_unref(pkt);
 	}
-
-	goto done;
-
-frame_err:
-	SYS_LOG_ERR("Failed to place frame in RX queue:%d", ret);
-	goto update_error;
-
-pkt_err:
-	SYS_LOG_ERR("Failed to append data to buffer");
-
-update_error:
-	eth_stats_update_errors_rx(iface);
-	net_pkt_unref(pkt);
-
-done:	return;
 }
 
 static void rx_isr(void *arg)

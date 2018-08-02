@@ -7,11 +7,11 @@
 #
 
 menuconfig ETH_STELLARIS
-	bool "STELLARIS Ethernet Controller"
+	bool "Enable TI Stellaris MCU family ethernet driver."
 	depends on NET_L2_ETHERNET
 	default n
 	help
-	  LM3S6965 on-board Ethernet Controller
+	  Stellaris on-board Ethernet Controller
 
 if ETH_STELLARIS
 config ETH_STELLARIS_NAME
