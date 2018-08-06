@@ -1,0 +1,14 @@
+# Kconfig - ETH_STELLARIS Ethernet driver configuration options
+
+#
+# Copyright (c) 2018 Zilogic Systems
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+menuconfig ETH_STELLARIS
+	bool "Enable TI Stellaris MCU family ethernet driver."
+	depends on NET_L2_ETHERNET
+	default n
+	help
+	  Stellaris on-board Ethernet Controller
