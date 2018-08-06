@@ -21,15 +21,15 @@ static void eth_stellaris_assign_mac(struct device *dev)
 {
 	u32_t value = 0x0;
 
-	value |= CONFIG_ETH_STELLARIS_MAC0;
-	value |= CONFIG_ETH_STELLARIS_MAC1 << 8;
-	value |= CONFIG_ETH_STELLARIS_MAC2 << 16;
-	value |= CONFIG_ETH_STELLARIS_MAC3 << 24;
+	value |= (u32_t)CONFIG_ETH_MAC_ADDR_0;
+	value |= (u32_t)CONFIG_ETH_MAC_ADDR_1 << 8;
+	value |= (u32_t)CONFIG_ETH_MAC_ADDR_2 << 16;
+	value |= (u32_t)CONFIG_ETH_MAC_ADDR_3 << 24;
 	sys_write32(value, REG_MACIA0);
 
 	value = 0x0;
-	value |= CONFIG_ETH_STELLARIS_MAC4;
-	value |= CONFIG_ETH_STELLARIS_MAC5 << 8;
+	value |= (u32_t)CONFIG_ETH_MAC_ADDR_4;
+	value |= (u32_t)CONFIG_ETH_MAC_ADDR_5 << 8;
 	sys_write32(value, REG_MACIA1);
 }
 
@@ -165,7 +165,6 @@ void eth_rx_error_out(char *err_msg, struct net_if *iface)
 {
 	u32_t val;
 	struct device *dev = net_if_get_device(iface);
-	struct eth_stellaris_runtime *dev_data = DEV_DATA(dev);
 
 	SYS_LOG_ERR(err_msg);
 	eth_stats_update_errors_rx(iface);
@@ -314,24 +313,25 @@ static void eth_stellaris_irq_config(struct device *dev)
 {
 	ARG_UNUSED(dev);
 	/* Enable Interrupt */
-	IRQ_CONNECT(IRQ_ETH, 0, rx_isr, DEVICE_GET(eth_stellaris), 0);
-	irq_enable(IRQ_ETH);
+	IRQ_CONNECT(CONFIG_ETH_IRQ,
+		    CONFIG_ETH_IRQ_PRIO,
+		    rx_isr, DEVICE_GET(eth_stellaris), 0);
+	irq_enable(CONFIG_ETH_IRQ);
 }
 
 static struct eth_stellaris_config eth_cfg = {
-	.mac_base = ETH_MAC_BASE_ADDR,
-	.irq_num = IRQ_ETH,
+	.mac_base = CONFIG_ETH_BASE_ADDR,
 	.config_func = eth_stellaris_irq_config,
 };
 
 static struct eth_stellaris_runtime eth_data = {
 	.mac_addr = {
-		CONFIG_ETH_STELLARIS_MAC0,
-		CONFIG_ETH_STELLARIS_MAC1,
-		CONFIG_ETH_STELLARIS_MAC2,
-		CONFIG_ETH_STELLARIS_MAC3,
-		CONFIG_ETH_STELLARIS_MAC4,
-		CONFIG_ETH_STELLARIS_MAC5
+		(u8_t)CONFIG_ETH_MAC_ADDR_0,
+		(u8_t)CONFIG_ETH_MAC_ADDR_1,
+		(u8_t)CONFIG_ETH_MAC_ADDR_2,
+		(u8_t)CONFIG_ETH_MAC_ADDR_3,
+		(u8_t)CONFIG_ETH_MAC_ADDR_4,
+		(u8_t)CONFIG_ETH_MAC_ADDR_5
 	},
 	.tx_err = false,
 };
@@ -341,7 +341,7 @@ static const struct ethernet_api eth_stellaris_apis = {
 	.iface_api.send = eth_stellaris_send,
 };
 
-NET_DEVICE_INIT(eth_stellaris, CONFIG_ETH_STELLARIS_NAME,
+NET_DEVICE_INIT(eth_stellaris, CONFIG_ETH_DRV_NAME,
 		eth_stellaris_dev_init, &eth_data, &eth_cfg,
 		CONFIG_ETH_INIT_PRIORITY,
 		&eth_stellaris_apis, ETHERNET_L2,

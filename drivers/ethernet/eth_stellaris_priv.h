@@ -17,10 +17,6 @@
 /*
  *  Register mapping
  */
-
-/* Base address */
-#define ETH_MAC_BASE_ADDR	0x40048000
-
 /* Registers for ethernet system, mac_base + offset */
 #define REG_MACRIS		((DEV_CFG(dev)->mac_base) + 0x000)
 #define REG_MACIM		((DEV_CFG(dev)->mac_base) + 0x004)
