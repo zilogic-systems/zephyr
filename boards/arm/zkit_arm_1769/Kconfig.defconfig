@@ -3,4 +3,9 @@ if BOARD_ZKIT_ARM_1769
 config BOARD
 	default "Zkit-ARM-1769"
 
+if GPIO
+   config GPIO_LPC17XX
+	def_bool y
+
+endif
 endif # BOARD_ZKIT_ARM_1769

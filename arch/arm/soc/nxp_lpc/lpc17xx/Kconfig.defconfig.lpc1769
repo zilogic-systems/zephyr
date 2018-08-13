@@ -11,4 +11,12 @@ config PINMUX_LPC17XX
 
 endif # PINMUX
 
+if GPIO
+
+config GPIO_LPC17XX
+	def_bool y
+
+endif # GPIO
+
+
 endif
