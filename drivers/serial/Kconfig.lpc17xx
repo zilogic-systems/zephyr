@@ -1,0 +1,19 @@
+# Kconfig - LPC17XX UART
+#
+# Copyright 2018, Zilogic Systems
+#
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig UART_LPC17XX
+	bool "LPC17xx serial driver"
+	depends on SERIAL
+	select SERIAL_HAS_DRIVER
+	help
+	  This option enables the LPC17xx serial driver.
+
+menuconfig UART_LPC17XX_PORT_0
+	bool "Enable LPC17xx UART 0"
+	depends on UART_LPC17XX
+	help
+	  Enable support for UART0 port in the driver. Say y here
+	  if you want to use UART0.
