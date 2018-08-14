@@ -1,0 +1,15 @@
+menuconfig UART_LPC17XX
+	bool "LPC17xx serial driver"
+	depends on SERIAL
+	default y
+	select SERIAL_HAS_DRIVER
+	help
+	  This option enables the lpc17xx serial driver.
+
+menuconfig LPC17XX_UART0
+	bool "Enable LPC17xx UART0"
+	depends on UART_LPC17XX
+	default y
+	help
+	  This tells the driver to configure the UART port at boot, depending on
+	  the additional configure options below.
