@@ -11,4 +11,11 @@ config PINMUX_LPC17XX
 
 endif # PINMUX
 
+if SERIAL
+
+config UART_LPC17XX
+	def_bool y
+
+endif # SERIAL
+
 endif
