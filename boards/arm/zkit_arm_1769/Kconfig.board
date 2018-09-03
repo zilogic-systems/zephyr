@@ -1,3 +1,5 @@
 config BOARD_ZKIT_ARM_1769
 	bool "ZKit-ARM-1769"
+	select HAS_DTS
+	select HAS_DTS_SPI
 	depends on SOC_SERIES_LPC17XX

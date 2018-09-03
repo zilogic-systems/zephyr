@@ -18,4 +18,11 @@ config UART_LPC17XX
 
 endif # SERIAL
 
+if SPI
+
+config SPI_LPC17XX
+	def_bool y
+
+endif # SPI
+
 endif
