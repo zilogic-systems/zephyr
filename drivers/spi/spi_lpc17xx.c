@@ -45,18 +45,18 @@ static void sys_set_bits(u32_t address,
         sys_write32(temp, address);
 }
 
-static void rx_buffer_flush(u32_t baddr)
+static void rx_buffer_flush(u32_t base)
 {
-        u32_t stat_reg = SPI_REG_ADDR(baddr, SPI_SR_OFFSET);
+        u32_t stat_reg = SPI_REG_ADDR(base, SPI_SR_OFFSET);
 
         /* Read data until Rx FIFO is Empty */
         while (sys_test_bit(stat_reg, 2))
-                sys_read32(SPI_REG_ADDR(baddr, SPI_DR_OFFSET));
+                sys_read32(SPI_REG_ADDR(base, SPI_DR_OFFSET));
 }
 
-static void wait_for_sync(u32_t baddr)
+static void wait_for_sync(u32_t base)
 {
-        u32_t stat_reg = SPI_REG_ADDR(baddr, SPI_SR_OFFSET);
+        u32_t stat_reg = SPI_REG_ADDR(base, SPI_SR_OFFSET);
 
         /* wait until busy flag is clear */
         while (sys_test_bit(stat_reg, 4))
@@ -77,13 +77,13 @@ static void pull_data(struct device *dev)
 {
         const struct spi_lpc17xx_config *cfg = dev->config->config_info;
         struct spi_lpc17xx_data *data = dev->driver_data;
-        u32_t baddr = cfg->baddr;
+        u32_t base = cfg->base;
         u16_t value;
 
         /* Check Rx FIFO is Not Empty */
-        while (sys_test_bit(SPI_REG_ADDR(baddr, SPI_SR_OFFSET), 2)) {
+        while (sys_test_bit(SPI_REG_ADDR(base, SPI_SR_OFFSET), 2)) {
 
-                value = sys_read16(SPI_REG_ADDR(baddr, SPI_DR_OFFSET));
+                value = sys_read16(SPI_REG_ADDR(base, SPI_DR_OFFSET));
 
                 if (spi_context_rx_buf_on(&data->ctx)) {
                         UNALIGNED_PUT(value, (u8_t *)data->ctx.rx_buf);
@@ -96,15 +96,15 @@ static void push_data(struct device *dev)
 {
         const struct spi_lpc17xx_config *cfg = dev->config->config_info;
         struct spi_lpc17xx_data *data = dev->driver_data;
-        u32_t baddr = cfg->baddr;
+        u32_t base = cfg->base;
         u16_t value;
 
         /* Check Tx FIFO is Not Full */
-        if (sys_test_bit(SPI_REG_ADDR(baddr, SPI_SR_OFFSET), 1)) {
+        if (sys_test_bit(SPI_REG_ADDR(base, SPI_SR_OFFSET), 1)) {
                 value = 0;
 
                 /* Hold, if Rx FIFO Full */
-                if (sys_test_bit(SPI_REG_ADDR(baddr, SPI_SR_OFFSET), 3)) {
+                if (sys_test_bit(SPI_REG_ADDR(base, SPI_SR_OFFSET), 3)) {
                         return;
                 }
 
@@ -112,31 +112,30 @@ static void push_data(struct device *dev)
                         value = UNALIGNED_GET((u8_t *)(data->ctx.tx_buf));
                 }
 
-                sys_write16(value, SPI_REG_ADDR(baddr, SPI_DR_OFFSET));
+                sys_write16(value, SPI_REG_ADDR(base, SPI_DR_OFFSET));
                 spi_context_update_tx(&data->ctx, 1, 1);
         }
 }
 
-static void set_frequency(uint32_t freq, spi_config_regs *regs)
+static void set_frequency(u32_t freq, const u32_t base)
 {
-
         u32_t i, j;
 
         for (i = 2; i <= 254; i += 2)
                 for (j = 1; j < 256; j++)
                         if (freq >= ((SPI_PCLK) / (i * j))) {
                                 /* Set optimal div value */
-                                sys_set_bits((u32_t)&regs->cpsr, 0xFF, 0, i);
+                                sys_set_bits(SPI_REG_ADDR(base, SPI_CPSR_OFFSET), 0xFF, 0, i);
 
                                 /* Set optimal SCR value */
-                                sys_set_bits((u32_t)&regs->cr0, 0xFF, 8, j - 1);
+                                sys_set_bits(SPI_REG_ADDR(base, SPI_CR0_OFFSET), 0xFF, 8, j - 1);
                                 return;
                         }
         /* Set div value to default if frequency is less*/
-        sys_set_bits((u32_t)&regs->cpsr, 0xFF, 0, 254);
+        sys_set_bits(SPI_REG_ADDR(base, SPI_CPSR_OFFSET), 0xFF, 0, 254);
 
         /* Set SCR value to default if frequency is less */
-        sys_set_bits((u32_t)&regs->cr0, 0xFF, 8, 255);
+        sys_set_bits(SPI_REG_ADDR(base, SPI_CR0_OFFSET), 0xFF, 8, 255);
 }
 
 static int spi_lpc17xx_configure(struct device *dev,
@@ -144,9 +143,7 @@ static int spi_lpc17xx_configure(struct device *dev,
 {
         const struct spi_lpc17xx_config *cfg = dev->config->config_info;
         struct spi_lpc17xx_data *data = dev->driver_data;
-        u32_t baddr = cfg->baddr;
-        spi_config_regs *cfg_regs = &data->regs;
-        spi_config_regs regs = {0};
+        u32_t base = cfg->base;
 
         if (spi_context_configured(&data->ctx, config)) {
                 /* Nothing to do */
@@ -159,24 +156,24 @@ static int spi_lpc17xx_configure(struct device *dev,
         }
 
         /* Setting SSP in Master Mode */
-        sys_clear_bit((u32_t)&regs.cr1, 2);
+        sys_clear_bit(SPI_REG_ADDR(base, SPI_CR1_OFFSET), 2);
 
         /* Setting Frame Format to SPI */
-        sys_set_bits((u32_t)&regs.cr0, 0x3, 4, 0x0);
+        sys_set_bits(SPI_REG_ADDR(base, SPI_CR0_OFFSET), 0x3, 4, 0x0);
 
         if ((config->operation & SPI_MODE_CPOL) != 0) {
                 /* Set CPOL if configured */
-                sys_set_bit((u32_t)&regs.cr0, 6);
+                sys_set_bit(SPI_REG_ADDR(base, SPI_CR0_OFFSET), 6);
         }
 
         if ((config->operation & SPI_MODE_CPHA) != 0) {
                 /* Set CPHA if configured */
-                sys_set_bit((u32_t)&regs.cr0, 7);
+                sys_set_bit(SPI_REG_ADDR(base, SPI_CR0_OFFSET), 7);
         }
 
         if ((config->operation & SPI_MODE_LOOP) != 0) {
                 /* Setting SSP to Loopback Mode */
-                sys_set_bit((u32_t)&regs.cr1, 0);
+                sys_set_bit(SPI_REG_ADDR(base, SPI_CR1_OFFSET), 0);
         }
 
         if (SPI_WORD_SIZE_GET(config->operation) != 8) {
@@ -184,20 +181,10 @@ static int spi_lpc17xx_configure(struct device *dev,
         }
 
         /* 8 bits frame per transfer */
-        sys_set_bits((u32_t)&regs.cr0, 0xF, 0, 0x7);
+        sys_set_bits(SPI_REG_ADDR(base, SPI_CR0_OFFSET), 0xF, 0, 0x7);
 
         /* Setting the configured frequency */
-        set_frequency(config->frequency, &regs);
-
-        if (memcmp(&regs, cfg_regs, sizeof(spi_config_regs))) {
-                /* Writing value to registers if config changed */
-                sys_write32(regs.cr0, SPI_REG_ADDR(baddr, SPI_CR0_OFFSET));
-                sys_write32(regs.cr1, SPI_REG_ADDR(baddr, SPI_CR1_OFFSET));
-                sys_write32(regs.cpsr, SPI_REG_ADDR(baddr, SPI_CPSR_OFFSET));
-
-                /* Preserving config in structure */
-                memcpy(cfg_regs, &regs, sizeof(spi_config_regs));
-        }
+        set_frequency(config->frequency, base);
 
         /* At this point, it's mandatory to set this on the context! */
         data->ctx.config = config;
@@ -214,15 +201,15 @@ static int spi_lpc17xx_transceive(struct device *dev,
 {
         const struct spi_lpc17xx_config *cfg = dev->config->config_info;
         struct spi_lpc17xx_data *data = dev->driver_data;
-        u32_t baddr = cfg->baddr;
+        u32_t base = cfg->base;
         int err;
 
         spi_context_lock(&data->ctx, false, NULL);
 
         /* Wait for previous transfer complete */
-        wait_for_sync(baddr);
+        wait_for_sync(base);
 
-        rx_buffer_flush(baddr);
+        rx_buffer_flush(base);
 
         err = spi_lpc17xx_configure(dev, config);
         if (err != 0) {
@@ -234,7 +221,7 @@ static int spi_lpc17xx_transceive(struct device *dev,
         spi_context_cs_control(&data->ctx, true);
 
         /* Set SSE bit, enable SSP */
-        sys_set_bit(SPI_REG_ADDR(baddr, SPI_CR1_OFFSET), 1);
+        sys_set_bit(SPI_REG_ADDR(base, SPI_CR1_OFFSET), 1);
 
         do {
                 push_data(dev);
@@ -261,10 +248,10 @@ static int spi_lpc17xx_release(struct device *dev,
 {
         const struct spi_lpc17xx_config *cfg = dev->config->config_info;
         struct spi_lpc17xx_data *data = dev->driver_data;
-        u32_t baddr = cfg->baddr;
+        u32_t base = cfg->base;
 
         /* Wait for previous transfer complete */
-        wait_for_sync(baddr);
+        wait_for_sync(base);
 
         spi_context_unlock_unconditionally(&data->ctx);
 
@@ -295,7 +282,7 @@ static const struct spi_driver_api spi_lpc17xx_driver_api = {
 #ifdef CONFIG_SPI_0
 
 static const struct spi_lpc17xx_config spi_lpc17xx_ssp0_cfg = {
-        .baddr = CONFIG_SSP0_BASE_ADDRESS,
+        .base = CONFIG_SSP0_BASE_ADDRESS,
         .clock = 21
 };
 
@@ -315,7 +302,7 @@ DEVICE_AND_API_INIT(spi_lpc17xx_ssp0, CONFIG_SSP0_NAME, &spi_lpc17xx_ssp_init,
 #ifdef CONFIG_SPI_1
 
 static const struct spi_lpc17xx_config spi_lpc17xx_ssp1_cfg = {
-        .baddr = CONFIG_SSP1_BASE_ADDRESS,
+        .base = CONFIG_SSP1_BASE_ADDRESS,
         .clock = 10
 };
 
