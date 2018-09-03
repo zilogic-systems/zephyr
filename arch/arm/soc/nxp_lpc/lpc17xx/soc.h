@@ -107,6 +107,17 @@ enum pll0con_config {
 
 #endif /* !_ASMLANGUAGE */
 
+#define IOCON_PIO_FUNC0		0x00u
+#define IOCON_PIO_FUNC1		0x01u
+#define IOCON_PIO_FUNC2		0x02u
+#define IOCON_PIO_FUNC3         0x03u
+#define IOCON_PIO_PULLUP        0x00u
+#define IOCON_PIO_REPEATER      0x04u
+#define IOCON_PIO_NPUNPD        0x08u
+#define IOCON_PIO_PULLDOWN      0x0Cu
+#define IOCON_PIO_NOD           0x00u
+#define IOCON_PIO_OD            0x10u
+
 #ifdef __cplusplus
 }
 #endif
