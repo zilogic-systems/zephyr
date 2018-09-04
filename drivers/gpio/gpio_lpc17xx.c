@@ -43,17 +43,15 @@ static int gpio_lpc17xx_configure(struct device *dev,
                 return -EINVAL;
         }
         /* supports access by pin now,you can add access by port when needed */
-        if (access_op == GPIO_ACCESS_BY_PIN) {
-                /* input-0,output-1 */
-                if ((flags & GPIO_DIR_MASK) == GPIO_DIR_IN) {
-                        sys_clear_bit(GPIO_REG_ADDR(base, GPIO_DIR_OFFSET, port), pin);
-                } else {
-                        sys_set_bit(GPIO_REG_ADDR(base, GPIO_DIR_OFFSET, port), pin);
-                        sys_set_bit(GPIO_REG_ADDR(base, GPIO_OUT_SET_OFFSET, port), pin);
-                }
-        } else {
-
+        if (access_op != GPIO_ACCESS_BY_PIN) {
                 return -EINVAL;
+        }
+        /* input-0,output-1 */
+        if ((flags & GPIO_DIR_MASK) == GPIO_DIR_IN) {
+                sys_clear_bit(GPIO_REG_ADDR(base, GPIO_DIR_OFFSET, port), pin);
+        } else {
+                sys_set_bit(GPIO_REG_ADDR(base, GPIO_DIR_OFFSET, port), pin);
+                sys_set_bit(GPIO_REG_ADDR(base, GPIO_OUT_SET_OFFSET, port), pin);
         }
 
         return 0;
@@ -69,15 +67,15 @@ static int gpio_lpc17xx_write(struct device *dev,
         u32_t port = GET_PORT(pin);
         pin = GET_PIN(pin);
 
-        if (access_op == GPIO_ACCESS_BY_PIN) {
-                /* Set/Clear the data output for the respective pin */
-                if (value)
-                        sys_set_bit(GPIO_REG_ADDR(base, GPIO_OUT_SET_OFFSET, port), pin);
-                else
-                        sys_set_bit(GPIO_REG_ADDR(base, GPIO_OUT_CLEAR_OFFSET, port), pin);
-        } else { /* return an error for all other options */
+        if (access_op != GPIO_ACCESS_BY_PIN) {
                 return -EINVAL;
         }
+
+        /* Set/Clear the data output for the respective pin */
+        if (value)
+                sys_set_bit(GPIO_REG_ADDR(base, GPIO_OUT_SET_OFFSET, port), pin);
+        else
+                sys_set_bit(GPIO_REG_ADDR(base, GPIO_OUT_CLEAR_OFFSET, port), pin);
 
         return 0;
 }
@@ -92,12 +90,11 @@ static int gpio_lpc17xx_read(struct device *dev,
         u32_t port = GET_PORT(pin);
         pin = GET_PIN(pin);
 
-        if (access_op == GPIO_ACCESS_BY_PIN) {
-                *value = sys_test_bit(GPIO_REG_ADDR(base, GPIO_IN_OFFSET, port), pin);
-        } else { /* return an error for all other options */
+        if (access_op != GPIO_ACCESS_BY_PIN) {
                 return -EINVAL;
         }
 
+        *value = sys_test_bit(GPIO_REG_ADDR(base, GPIO_IN_OFFSET, port), pin);
         return 0;
 }
 
@@ -125,4 +122,3 @@ DEVICE_AND_API_INIT(gpio_lpc17xx_port, CONFIG_GPIO_LABEL,
                     POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
                     &gpio_lpc17xx_driver_api);
 #endif /* CONFIG_GPIO_LPC17XX */
-

@@ -9,4 +9,4 @@ menuconfig GPIO_LPC17XX
 	bool "LPC GPIO driver"
 	depends on GPIO
 	help
-	  Enable the LPC pinmux driver.
+	  Enable the LPC GPIO driver.
