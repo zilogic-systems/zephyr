@@ -25,4 +25,11 @@ config SPI_LPC17XX
 
 endif # SPI
 
+if GPIO
+
+config GPIO_LPC17XX
+	def_bool y
+
+endif # GPIO
+
 endif

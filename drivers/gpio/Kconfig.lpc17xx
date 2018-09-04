@@ -1,0 +1,12 @@
+# Kconfig.lpc17xx - LPC GPIO Driver
+#
+# Copyright (c) 2018, Zilogic Systems
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+menuconfig GPIO_LPC17XX
+	bool "LPC GPIO driver"
+	depends on GPIO
+	help
+	  Enable the LPC GPIO driver.
