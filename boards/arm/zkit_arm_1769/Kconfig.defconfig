@@ -9,10 +9,4 @@ config UART_LPC17XX_PORT_0
 	def_bool y if UART_CONSOLE
 
 endif # UART_LPC17XX
-
-if GPIO
-   config GPIO_LPC17XX
-	def_bool y
-
-endif
 endif # BOARD_ZKIT_ARM_1769
