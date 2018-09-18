@@ -56,14 +56,36 @@ static void eth_stellaris_dev_init(struct device *dev)
 	sys_write32(value, REG_MACRCTL);
 }
 
+static void eth_stellaris_flush(struct device *dev)
+{
+	struct eth_stellaris_runtime *dev_data = DEV_DATA(dev);
+
+	if (dev_data->tx_pos != 0) {
+		sys_write32(dev_data->tx_word, REG_MACDATA);
+		dev_data->tx_pos = 0;
+		dev_data->tx_word = 0;
+	}
+}
+
+static void eth_stellaris_send_byte(struct device *dev, u8_t byte)
+{
+	struct eth_stellaris_runtime *dev_data = DEV_DATA(dev);
+
+	dev_data->tx_word |= byte << (dev_data->tx_pos * 8);
+	dev_data->tx_pos++;
+	if (dev_data->tx_pos == 4) {
+		sys_write32(dev_data->tx_word, REG_MACDATA);
+		dev_data->tx_pos = 0;
+		dev_data->tx_word = 0;
+	}
+}
+
 static int eth_stellaris_send(struct net_if *iface, struct net_pkt *pkt)
 {
 	struct net_buf *frag;
 	u32_t reg_val;
-	u16_t bytes_left;
-	u16_t head_len_left, partial_data_len;
+	u16_t head_len_left, i;
 	u8_t *data_ptr;
-	bool partial_data;
 	struct net_eth_hdr *pkt_hdr;
 	struct device *dev = net_if_get_device(iface);
 	struct eth_stellaris_runtime *dev_data = DEV_DATA(dev);
@@ -96,80 +118,14 @@ static int eth_stellaris_send(struct net_if *iface, struct net_pkt *pkt)
 		sys_write32(*(u32_t *)data_ptr, REG_MACDATA);
 	}
 
-	/* Send the payload, if partial words are present,
-	 * send them separately.
-	 */
-	partial_data = false;
-	partial_data_len = 0;
-
+	/* Send the payload */
 	for (frag = pkt->frags; frag; frag = frag->frags) {
-		data_ptr = frag->data; bytes_left = frag->len;
-		if (partial_data) {
-			partial_data = false;
-			switch (partial_data_len) {
-			case 3:
-				reg_val |= data_ptr[0] << 8;
-				reg_val |= data_ptr[1] << 16;
-				reg_val |= data_ptr[2] << 24;
-				data_ptr += 3; bytes_left += 3;
-				sys_write32(reg_val, REG_MACDATA);
-				break;
-			case 2:
-				reg_val |= data_ptr[0] << 16;
-				reg_val |= data_ptr[1] << 24;
-				data_ptr += 2; bytes_left -= 2;
-				sys_write32(reg_val, REG_MACDATA);
-				break;
-			case 1:
-				reg_val |= data_ptr[0] << 24;
-				++data_ptr; --bytes_left;
-				sys_write32(reg_val, REG_MACDATA);
-				break;
-			}
-		}
-
-		while (bytes_left > 3) {
-			sys_write32(*(u32_t *)data_ptr, REG_MACDATA);
-			data_ptr += 4;
-			bytes_left -= 4;
-		}
-		/* Have read a full fragment, hence move to next */
-		if (bytes_left == 0) {
-			continue;
-		} else if (frag->frags) { /* Next frag exists */
-			reg_val = 0;
-			partial_data = true;
-			partial_data_len = 4 - bytes_left;
-			switch (bytes_left) {
-			case 3:
-				reg_val |= data_ptr[0];
-				reg_val |= data_ptr[1] << 8;
-				reg_val |= data_ptr[2] << 16;
-				break;
-			case 2:
-				reg_val |= data_ptr[0];
-				reg_val |= data_ptr[1] << 8;
-				break;
-			case 1:
-				reg_val |= data_ptr[0];
-				break;
-			}
-		} else { /* Next frag doesn't exist. This is the last frag */
-			reg_val = 0;
-			switch (bytes_left) {
-			case 3:
-				reg_val |= (data_ptr[2] << 16);
-			case 2:
-				reg_val |= data_ptr[1] << 8;
-			case 1:
-				reg_val |= data_ptr[0];
-				break;
-			default:
-				break;
-			}
-			sys_write32(reg_val, REG_MACDATA);
+		for (i = 0; i < frag->len; ++i) {
+			eth_stellaris_send_byte(dev, frag->data[i]);
 		}
 	}
+	/* will transmit the partial word */
+	eth_stellaris_flush(dev);
 
 	/* Enable Txn */
 	sys_write32(BIT_MACTR_NEWTX, REG_MACTR);
@@ -204,8 +160,9 @@ void eth_rx_error_out(struct net_if *iface)
 {
 	u32_t val;
 
-	eth_stats_update_errors_rx(iface);
+	struct device *dev = net_if_get_device(iface);
 
+	eth_stats_update_errors_rx(iface);
 	/* Clear the rx_frame buffer,
 	 * otherwise it could lead to underflow errors
 	 */
@@ -377,6 +334,8 @@ struct eth_stellaris_runtime eth_data = {
 		(u8_t)CONFIG_ETH_MAC_ADDR_5
 	},
 	.tx_err = false,
+	.tx_word = 0,
+	.tx_pos = 0,
 };
 
 static const struct ethernet_api eth_stellaris_apis = {

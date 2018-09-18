@@ -54,6 +54,8 @@ struct eth_stellaris_runtime {
 	u8_t mac_addr[6];
 	struct k_sem tx_sem;
 	bool tx_err;
+	u32_t tx_word;
+	int tx_pos;
 #if defined(CONFIG_NET_STATISTICS_ETHERNET)
 	struct net_stats_eth stats;
 #endif
