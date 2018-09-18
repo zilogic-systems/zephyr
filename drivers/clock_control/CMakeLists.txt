@@ -1,5 +1,6 @@
 zephyr_sources_ifdef(CONFIG_CLOCK_CONTROL_BEETLE              beetle_clock_control.c)
 zephyr_sources_ifdef(CONFIG_CLOCK_CONTROL_MCUX_CCM            clock_control_mcux_ccm.c)
+zephyr_sources_ifdef(CONFIG_CLOCK_CONTROL_LPC17XX             clock_control_lpc17xx.c)
 zephyr_sources_ifdef(CONFIG_CLOCK_CONTROL_MCUX_SIM            clock_control_mcux_sim.c)
 zephyr_sources_ifdef(CONFIG_CLOCK_CONTROL_NRF5                nrf5_power_clock.c)
 zephyr_sources_ifdef(CONFIG_CLOCK_CONTROL_QUARK_SE            quark_se_clock_control.c)

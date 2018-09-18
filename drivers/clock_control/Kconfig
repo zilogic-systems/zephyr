@@ -46,6 +46,8 @@ source "drivers/clock_control/Kconfig.quark_se"
 
 source "drivers/clock_control/Kconfig.stm32"
 
+source "drivers/clock_control/Kconfig.lpc17xx"
+
 source "drivers/clock_control/Kconfig.beetle"
 
 source "drivers/clock_control/Kconfig.mcux_ccm"

@@ -4,6 +4,13 @@ config SOC
        string
        default "lpc1769"
 
+if CLOCK_CONTROL
+
+config CLOCK_CONTROL_LPC17XX
+	def_bool y
+
+endif # CLOCK_CONTROL
+
 if PINMUX
 
 config PINMUX_LPC17XX

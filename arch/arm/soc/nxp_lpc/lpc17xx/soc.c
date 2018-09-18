@@ -22,14 +22,15 @@
 static void nxp_lpc17xx_uart_init(void)
 {
 	u32_t regval;
-	/* Step 1: Enable power on UART0 
+
+	/* Step 1: Enable power on UART0
 	 * UART0 is enabled on reset
 	 */
 	regval = sys_read32(LPC17XX_SYSCON_PCONP);
 	regval &= ~SYSCON_PCLKSEL0_UART0_MASK;
 	sys_write32(regval, LPC17XX_SYSCON_PCONP);
 
-	/* Step 2: Enable clocking on UART 
+	/* Step 2: Enable clocking on UART
 	 * PCCLK_peripheral = CCLK
 	 */
 	regval = sys_read32(LPC17XX_SYSCON_PCLKSEL0);
@@ -71,14 +72,14 @@ static void osc_sel(void)
 	u32_t value;
 
 	value = sys_read32(PCLKSEL1);
-	value |= PCLKSEL1_PCLK_GPIOINT_DIV1  |
-		 PCLKSEL1_PCLK_PCB_DIV1      |
-		 PCLKSEL1_PCLK_SYSCON_DIV1;
+	value |= PCLKSEL1_PCLK_GPIOINT_DIV1	 |
+		PCLKSEL1_PCLK_PCB_DIV1			|
+		PCLKSEL1_PCLK_SYSCON_DIV1;
 	sys_write32(value, PCLKSEL1);
 	sys_clear_bit(SCS, OSCRANGE); /* Clock source Rannge as 20Mhz */
-	sys_set_bit(SCS, OSCEN);      /* Enable Main OSC */
+	sys_set_bit(SCS, OSCEN);			/* Enable Main OSC */
 	flash_latency(CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC);
-	 /* Wait for main OSC to start up */
+	/* Wait for main OSC to start up */
 	while (sys_test_bit(SCS, OSCSTAT) == 0);
 	/* Clock soure selection as main oscillator */
 	sys_set_bit(CLKSRCSEL, 0);
@@ -152,11 +153,11 @@ static void pll_config(u32_t crystal, u32_t frequency)
 	pll0_feed();			/* validate change in PLL0CON */
 	/* set core clock divider CCLKSEL */
 	sys_write32((best_corediv - 1) << CCLKSEL_bit, CCLKCFG);
-	 /* wait for PLL0 lock */
+	/* wait for PLL0 lock */
 	while (sys_test_bit(SCS, OSCSTAT) == 0);
 	/* connect PLL0 as clock source */
 	sys_set_bit(PLL0CON, PLLC0);
-	pll0_feed();	       /* validate connection */
+	pll0_feed();				 /* validate connection */
 
 }
 

@@ -1,20 +1,20 @@
 ---
-title: LPC GPIO
-id: nxp,lpc17xx-gpio
+title: LPC17XX CCM
+id: nxp,lpc17xx-ccm
 version: 0.1
 
 description: >
-    This is a representation of the LPC GPIO nodes
+    This binding gives a base representation of the LPC17xx Clock control
 
 properties:
     compatible:
       type: string
       category: required
       description: compatible strings
-      constraint: "nxp,lpc17xx-gpio"
+      constraint: "nxp,lpc17xx-ccm"
 
     reg:
-      type: int
+      type: array
       description: mmio register space
       generation: define
       category: required
@@ -25,13 +25,8 @@ properties:
       description: Human readable string describing the device (used by Zephyr for API name)
       generation: define
 
-    clocks:
-      type: array
-      category: required
-      description: Clock gate control information
-      generation: define
-
 "#cells":
-  - pin
-  - flags
+  - enable
+  - select
+
 ...
