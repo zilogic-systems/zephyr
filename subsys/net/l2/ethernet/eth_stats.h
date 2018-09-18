@@ -170,7 +170,7 @@ static inline void eth_stats_update_errors_rx(struct net_if *iface)
 		return;
 	}
 
-	stats = api->get_stats(iface);
+	stats = api->get_stats(net_if_get_device(iface));
 	if (!stats) {
 		return;
 	}
@@ -188,7 +188,7 @@ static inline void eth_stats_update_errors_tx(struct net_if *iface)
 		return;
 	}
 
-	stats = api->get_stats(iface);
+	stats = api->get_stats(net_if_get_device(iface));
 	if (!stats) {
 		return;
 	}

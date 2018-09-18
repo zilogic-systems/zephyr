@@ -13,7 +13,7 @@
 #define DEV_DATA(dev) \
 	((struct eth_stellaris_runtime *)(dev)->driver_data)
 #define DEV_CFG(dev) \
-	((const struct eth_stellaris_config *const)(dev)->config->config_info)
+	((struct eth_stellaris_config *const)(dev)->config->config_info)
 /*
  *  Register mapping
  */
@@ -25,6 +25,7 @@
 #define REG_MACDATA		((DEV_CFG(dev)->mac_base) + 0x010)
 #define REG_MACIA0		((DEV_CFG(dev)->mac_base) + 0x014)
 #define REG_MACIA1		((DEV_CFG(dev)->mac_base) + 0x018)
+#define REG_MACNP		((DEV_CFG(dev)->mac_base) + 0x034)
 #define REG_MACTR		((DEV_CFG(dev)->mac_base) + 0x038)
 
 /* ETH MAC Receive Control bit fields set value */
@@ -53,6 +54,9 @@ struct eth_stellaris_runtime {
 	u8_t mac_addr[6];
 	struct k_sem tx_sem;
 	bool tx_err;
+#if defined(CONFIG_NET_STATISTICS_ETHERNET)
+	struct net_stats_eth stats;
+#endif
 };
 
 typedef void (*eth_stellaris_config_irq_t)(struct device *dev);
