@@ -1,3 +1,8 @@
+#
+# Copyright (c) 2018, Zilogic Systems.
+#
+# SPDX-License-Identifier: Apache-2.0
+#
 ---
 title: LPC17XX CCM
 id: nxp,lpc17xx-ccm
@@ -26,7 +31,7 @@ properties:
       generation: define
 
 "#cells":
-  - enable
-  - select
+  - enable   # Periperal Clock to be Enabled
+  - select   # Clock Div value select (0 = CCLK / 4, 1 = CCLK, 2 = CCLK / 2, 3 = CCLK / 8)
 
 ...
