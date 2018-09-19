@@ -17,6 +17,15 @@
 		reg = <0x10000000 0x8000>;
 	};
 
+	clock: clock-controller@400FC000 {
+		compatible = "nxp,lpc17xx-ccm";
+		reg = <0x400FC000 0x1C8>;
+		label = "CCM";
+
+		clock-controller;
+		#clock-cells = <2>;
+	};
+
 	soc {
 		flash0:flash@0 {
 			reg = <0 0x80000>;
@@ -38,6 +47,7 @@
 			reg = <0x40088000 0x24>;
 			interrupts = <14 3>;
 			label = "SPI_0";
+			clocks = <&clock 21 0>;
 			#address-cells = <1>;
 			#size-cells = <0>;
 			status = "disabled";
@@ -48,16 +58,18 @@
 			reg = <0x40030000 0x24>;
 			interrupts = <15 3>;
 			label = "SPI_1";
+			clocks = <&clock 10 0>;
 			#address-cells = <1>;
 			#size-cells = <0>;
 		};
 
-    gpio: gpio@2009C000 {
+		gpio: gpio@2009C000 {
 			compatible = "nxp,lpc17xx-gpio";
 			reg = <0x2009C000 0x9C>;
 			label = "GPIO";
 			gpio-controller;
 			#gpio-cells = <2>;
+			clocks = <&clock 15 0>;
 		};
 	};
 };

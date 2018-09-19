@@ -1,0 +1,13 @@
+# Kconfig - LPC17XX CCM
+#
+# Copyright (c) 2018, Zilogic Systems.
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+menuconfig CLOCK_CONTROL_LPC17XX
+	bool
+	prompt "LPC17XX CCM driver"
+	depends on CLOCK_CONTROL
+	help
+	  Enable support for lpc ccm driver.
