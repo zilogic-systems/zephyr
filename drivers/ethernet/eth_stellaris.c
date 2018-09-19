@@ -83,9 +83,8 @@ static void eth_stellaris_send_byte(struct device *dev, u8_t byte)
 static int eth_stellaris_send(struct net_if *iface, struct net_pkt *pkt)
 {
 	struct net_buf *frag;
-	u32_t reg_val;
-	u16_t head_len_left, i;
-	u8_t *data_ptr;
+	u16_t head_len_left, i, data_len;
+	u8_t *eth_hdr;
 	struct net_eth_hdr *pkt_hdr;
 	struct device *dev = net_if_get_device(iface);
 	struct eth_stellaris_runtime *dev_data = DEV_DATA(dev);
@@ -98,24 +97,17 @@ static int eth_stellaris_send(struct net_if *iface, struct net_pkt *pkt)
 
 	/* Frame transmission
 	 *  First two bytes are data_len for frame,
-	 *  and next two bytes are DST MAC(byte0 and 1).
-	 *  Initially transmit the ethernet header
+	 *  Initially send the data_len
 	 */
+	data_len = net_pkt_get_len(pkt);
+	eth_stellaris_send_byte(dev, data_len & 0xff);
+	eth_stellaris_send_byte(dev, (data_len & 0xff00) >> 8);
+
+	/* Send the  header, header is 14 bytes */
 	head_len_left = net_pkt_ll_reserve(pkt);
-	data_ptr = net_pkt_ll(pkt);
-	reg_val = net_pkt_get_len(pkt);
-	reg_val |= ((u32_t)(*data_ptr++) << 16);
-	reg_val |= ((u32_t)(*data_ptr++) << 24);
-
-	/* Send the first word, part of header */
-	sys_write32(reg_val, REG_MACDATA);
-	head_len_left -= 2;
-
-	/* Write the rest of header,
-	 *  rest of header is 12 bytes and thus word aligned
-	 */
-	for (; head_len_left; head_len_left -= 4, data_ptr += 4) {
-		sys_write32(*(u32_t *)data_ptr, REG_MACDATA);
+	eth_hdr = net_pkt_ll(pkt);
+	for (i = 0; i < head_len_left; ++i) {
+		eth_stellaris_send_byte(dev, eth_hdr[i]);
 	}
 
 	/* Send the payload */
@@ -156,7 +148,7 @@ static int eth_stellaris_send(struct net_if *iface, struct net_pkt *pkt)
 	return 0;
 }
 
-void eth_rx_error_out(struct net_if *iface)
+void eth_stellaris_rx_error(struct net_if *iface)
 {
 	u32_t val;
 
@@ -172,42 +164,26 @@ void eth_rx_error_out(struct net_if *iface)
 	sys_write32(val, REG_MACRCTL);
 }
 
-void eth_stellaris_rx(struct device *dev)
+static int eth_stellaris_rx_pkt(struct device *dev, struct net_pkt *pkt)
 {
-	struct net_pkt *pkt = NULL;
-	struct eth_stellaris_runtime *dev_data = DEV_DATA(dev);
-	struct net_if *iface = dev_data->iface;
-	struct net_eth_hdr *pkt_hdr;
 	u32_t reg_val;
-	int pktlen, bytes_left, ret;
+	int frame_len, bytes_left;
 
-	/* Obtain the packet to be populated */
-	pkt = net_pkt_get_reserve_rx(0, K_NO_WAIT);
-	if (!pkt) {
-		SYS_LOG_ERR("Could not allocate pkt");
-		eth_rx_error_out(iface);
-		net_pkt_unref(pkt);
-		return;
-	}
-
-	/* Read the First word */
+	/*Read the First Word */
 	reg_val = sys_read32(REG_MACDATA);
-	pktlen = reg_val & 0x0000ffff;
+	frame_len = reg_val & 0x0000ffff;
 	if (!net_pkt_append(pkt, 2, (u8_t *)&reg_val + 2, K_NO_WAIT)) {
-		net_pkt_unref(pkt);
-		SYS_LOG_ERR("Failed to append data to buffer");
-		eth_rx_error_out(iface);
-		return;
+		return -1;
 	}
+
+	/* A word have been read already, Thus minus 4 bytes to be read */
+	bytes_left = frame_len - 4;
 
 	/* Read the rest of words, minus the partial word and FCS byte */
-	for (bytes_left = pktlen - 4; bytes_left > 7; bytes_left -= 4) {
+	for (; bytes_left > 7; bytes_left -= 4) {
 		reg_val = sys_read32(REG_MACDATA);
 		if (!net_pkt_append(pkt, 4, (u8_t *)&reg_val, K_NO_WAIT)) {
-			net_pkt_unref(pkt);
-			SYS_LOG_ERR("Failed to append data to buffer");
-			eth_rx_error_out(iface);
-			return;
+			return -1;
 		}
 	}
 
@@ -222,16 +198,41 @@ void eth_stellaris_rx(struct device *dev)
 		/* Read the the partial word */
 		if (!net_pkt_append(pkt, bytes_left - 4,
 				    (u8_t *)&reg_val, K_NO_WAIT)) {
-			net_pkt_unref(pkt);
-			SYS_LOG_ERR("Failed to append data to buffer");
-			eth_rx_error_out(iface);
-			return;
+			return -1;
 		}
 		bytes_left -= 4;
 	}
+	return frame_len;
+}
+
+static void eth_stellaris_rx(struct device *dev)
+{
+	struct net_pkt *pkt = NULL;
+	struct eth_stellaris_runtime *dev_data = DEV_DATA(dev);
+	struct net_if *iface = dev_data->iface;
+	struct net_eth_hdr *pkt_hdr;
+	int frame_len, ret;
+
+	/* Obtain the packet to be populated */
+	pkt = net_pkt_get_reserve_rx(0, K_NO_WAIT);
+	if (!pkt) {
+		SYS_LOG_ERR("Could not allocate pkt");
+		goto err_mem;
+	}
+
+	frame_len = eth_stellaris_rx_pkt(dev, pkt);
+	if (frame_len == -1) {
+		goto err_rx;
+	}
+
+	ret = net_recv_data(iface, pkt);
+	if (ret < 0) {
+		SYS_LOG_ERR("Failed to place frame in RX Queue");
+		goto pkt_unref;
+	}
 
 	/* Update statistics counters */
-	eth_stats_update_bytes_rx(iface, pktlen);
+	eth_stats_update_bytes_rx(iface, frame_len - 6);
 	eth_stats_update_pkts_rx(iface);
 	pkt_hdr = NET_ETH_HDR(pkt);
 	if (net_eth_is_addr_broadcast(&pkt_hdr->dst)) {
@@ -239,13 +240,16 @@ void eth_stellaris_rx(struct device *dev)
 	} else if (net_eth_is_addr_multicast(&pkt_hdr->dst)) {
 		eth_stats_update_multicast_rx(iface);
 	}
+	return;
 
-	ret = net_recv_data(iface, pkt);
-	if (ret < 0) {
-		net_pkt_unref(pkt);
-		SYS_LOG_ERR("Failed to place frame in RX Queue");
-		eth_rx_error_out(iface);
-	}
+err_rx:
+	SYS_LOG_ERR("Failed to append data to buffer");
+
+pkt_unref:
+	net_pkt_unref(pkt);
+
+err_mem:
+	eth_stellaris_rx_error(iface);
 }
 
 static void rx_isr(void *arg)
@@ -254,7 +258,7 @@ static void rx_isr(void *arg)
 	struct device *dev = (struct device *)arg;
 	struct eth_stellaris_runtime *dev_data = DEV_DATA(dev);
 	int isr_val = sys_read32(REG_MACRIS);
-	u32_t val, lock;
+	u32_t lock;
 
 	lock = irq_lock();
 
@@ -283,7 +287,7 @@ static void rx_isr(void *arg)
 	if (isr_val & BIT_MACRIS_RXER) {
 
 		SYS_LOG_ERR("Error Frame Recieved");
-		eth_rx_error_out(dev_data->iface);
+		eth_stellaris_rx_error(dev_data->iface);
 	}
 	irq_unlock(lock);
 }
