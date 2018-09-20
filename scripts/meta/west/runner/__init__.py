@@ -23,6 +23,7 @@ from . import pyocd
 from . import qemu
 from . import xtensa
 from . import intel_s1000
+from . import lpc21isp
 
 def get_runner_cls(runner):
     '''Get a runner's class object, given its name.'''
