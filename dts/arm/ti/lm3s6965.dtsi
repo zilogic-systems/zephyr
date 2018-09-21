@@ -53,7 +53,6 @@
 			interrupts = <42 0>;
 			status = "disabled";
 			local-mac-address = [00 11 22 33 44 55];
-			mtu = <1500>;
 			label = "ETH";
 		};
 	};
