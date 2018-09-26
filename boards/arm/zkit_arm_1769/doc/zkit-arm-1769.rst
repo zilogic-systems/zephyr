@@ -49,7 +49,11 @@ some highlights of the ZKit-ARM-1769 board:
      :height: 500px
      :alt: ZKit-ARM-1769
 
-More information about the board can be found at the `Product Page`_.
+More information about the board can be found at,
+      - `Product Page`_
+      - `LPC1769 User Manual`_
+      - `ZKit-ARM-1769 Schematics`_
+      - `ZKit-ARM-1769 User Manual`_
 
 Supported Features
 ==================
@@ -71,8 +75,6 @@ The Zephyr ZKit-ARM-1769 board configuration supports the following hardware fea
 +-----------+------------+-------------------------------------+
 | SPI       | on-chip    | spi                                 |
 +-----------+------------+-------------------------------------+
-| I2C       | on-chip    | i2c                                 |
-+-----------+------------+-------------------------------------+
 
 Other hardware features are not yet supported on Zephyr.
 
@@ -88,7 +90,7 @@ The ZKit-ARM-1769, ARM Development Kit has pinmux and gpio
 controllers, which is responsible for pin muxing, input/output, pull-up,
 etc.
 
-For mode details please refer to `Board User Manual`_.
+For mode details please refer to `ZKit-ARM-1769 User Manual`_.
 
 System Clock
 ============
@@ -144,5 +146,11 @@ Then, press the RESET button (The black one), you should see the following messa
 .. _Product Page:
    http://www.zilogic.com/blog/product-zkit-arm-1769.html
 
-.. _Board User Manual:
+.. _ZKit-ARM-1769 User Manual:
    http://www.zilogic.com/releases/current/zkit-arm-1769-user-manual.pdf
+
+.. _ZKit-ARM-1769 Schematics:
+   http://www.zilogic.com/releases/current/zkit-arm-1769-p1-r1b-schematic.pdf
+
+.. _LPC1769 User Manual:
+   https://www.nxp.com/docs/en/user-guide/UM10360.pdf
