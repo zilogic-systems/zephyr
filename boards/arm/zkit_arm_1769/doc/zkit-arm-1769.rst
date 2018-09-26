@@ -135,7 +135,7 @@ Run a serial host program to connect with your board:
 
 .. code-block:: console
 
-   $ minicom -D /dev/ttyUSB0
+   $ minicom -D /dev/ttyUSB0 -b 115200
 
 Then, press the RESET button (The black one), you should see the following message:
 
