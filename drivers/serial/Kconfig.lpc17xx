@@ -8,6 +8,7 @@ menuconfig UART_LPC17XX
 	bool "LPC17xx serial driver"
 	depends on SERIAL
 	select SERIAL_HAS_DRIVER
+	select SERIAL_SUPPORT_INTERRUPT
 	help
 	  This option enables the LPC17xx serial driver.
 
