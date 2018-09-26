@@ -1,1 +1,1 @@
-# FIXME: Add flashing support later
+include(${ZEPHYR_BASE}/boards/common/lpc21isp.board.cmake)

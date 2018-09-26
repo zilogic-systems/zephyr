@@ -1,0 +1,2 @@
+set(BOARD_FLASH_RUNNER lpc21isp)
+board_finalize_runner_args(lpc21isp)
