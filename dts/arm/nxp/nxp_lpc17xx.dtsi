@@ -41,6 +41,7 @@
 		       reg = <0x4000C000 0x30>;
 		       interrupts = <5 3>;
 		       label = "UART_0";
+		       clocks = <&clock 3 1>;
 		};
 
 		spi0: spi@40088000 {

@@ -21,34 +21,6 @@ extern "C" {
 
 #ifndef _ASMLANGUAGE
 
-#ifdef CONFIG_UART_LPC17XX
-#ifdef CONFIG_UART_LPC17XX_PORT_0
-	
-#define LPC17XX_SYSCON_BASE		0x4000fc00	
-/* Power */
-#define LPC17XX_SYSCON_BASE   	  	0x400fc000 /* -0x400fffff: System control */
-#define LPC17XX_SYSCON_PCONP_OFFSET 	0x00c4 /* Power Control for Peripherals Register */
-#define LPC17XX_SYSCON_PCONP        	(LPC17XX_SYSCON_BASE+LPC17XX_SYSCON_PCONP_OFFSET)
-#define SYSCON_PCONP_PCUART0          	(1 << 3)    /* Bit 3:  UART0 power/clock control */
-
-/* Peripheral clock */
-#define LPC17XX_SYSCON_PCLKSEL0_OFFSET  0x01a8  /* Peripheral Clock sel reg. 0 */
-#define LPC17XX_SYSCON_PCLKSEL0        	(LPC17XX_SYSCON_BASE+LPC17XX_SYSCON_PCLKSEL0_OFFSET)
-#define SYSCON_PCLKSEL0_UART0_SHIFT   	(6)     /* Bits 6-7: Peripheral clock UART0 */
-#define SYSCON_PCLKSEL0_UART0_MASK    	(3 << SYSCON_PCLKSEL0_UART0_SHIFT)
-
-/* Pin configuration */
-#define SYSCON_PINSEL0_TXD0_SHIFT	(4)
-#define SYSCON_PINSEL0_TXD0_MASK	(0x03 << SYSCON_PINSEL0_TXD0_SHIFT)
-#define SYSCON_PINSEL0_RXD0_SHIFT	(6)
-#define SYSCON_PINSEL0_RXD0_MASK	(0x03 << SYSCON_PINSEL0_RXD0_SHIFT)
-#define LPC17XX_PINSEL_BASE 		0x4002C000
-#define LPC17XX_PINSEL0 		(LPC17XX_PINSEL_BASE + 0x00)
-#define PINMODE0			0x4002C040
-
-#endif /* CONFIG_UART_LPC17XX_PORT_0 */
-#endif /* CONFIG_UART_LPC17XX */
-
 enum sysconfig_reg {
 
 	CLKSRCSEL = 0x400FC10C,

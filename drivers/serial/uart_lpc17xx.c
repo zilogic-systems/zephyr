@@ -13,18 +13,29 @@
  */
 
 #include <uart.h>
+#include <clock_control/lpc17xx_clock_control.h>
+#include <clock_control.h>
 
-/*UART Device data structure */
+/* Device config parameters */
+struct uart_lpc17xx_config {
+	u32_t base;
+	struct lpc17xx_clock_t pclk;
+#ifdef CONFIG_UART_INTERRUPT_DRIVEN
+	uart_irq_config_func_t irq_config_func;
+#endif
+};
+
+/* Device data structure */
 struct uart_lpc17xx_dev_data {
 	u32_t baud_rate;			/*Baud rate */
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
-	uart_irq_callback_user_data_t cb;	/*Callback function pointer */
+	uart_irq_callback_user_data_t cb;	/* Callback function pointer */
 	void *cb_data;				/* Callback function argument */
 #endif
 };
 
 #define DEV_CFG(dev) \
-	((struct uart_device_config *)(dev)->config->config_info)
+	((struct uart_lpc17xx_config *)(dev)->config->config_info)
 
 #define DEV_DATA(dev) \
 	((struct uart_lpc17xx_dev_data *)(dev)->driver_data)
@@ -40,21 +51,43 @@ struct uart_lpc17xx_dev_data {
 #define LPC17XX_UART_LCR	((DEV_CFG(dev)->base) + 0x00c)
 #define LPC17XX_UART_LSR	((DEV_CFG(dev)->base) + 0x014)
 
-static int uart_lpc17xx_init(struct device *dev)
+static void uart_lpc17xx_baudrate_set(struct device *dev)
 {
-	uint16_t dl;
+	const struct uart_lpc17xx_dev_data *dev_data = DEV_DATA(dev);
+	const struct uart_lpc17xx_config *cfg = DEV_CFG(dev);
+	u32_t freq;
+	u16_t dl;
 
-	/* Set 8-bits char*/
-	sys_write32(0x03, LPC17XX_UART_LCR);
+	/* Get peripheral clock frequency */
+	clock_control_get_rate(device_get_binding(CONFIG_CLOCK_LABEL),
+			       (clock_control_subsys_t) &cfg->pclk, &freq);
 
-	/* Set DLAB=1, Write DL value i.e = PCLK / BAUD / 16
-	 * 120 MHz / 115200 / 16, Finally set DLAB = 0
+	/* Set DLAB=1, Write DL value i.e = FREQ / BAUDRATE / 16
+	 * Finally set DLAB = 0
 	 */
 	sys_set_bit(LPC17XX_UART_LCR, 7);
-	dl = 65;
+	dl = (freq / dev_data->baud_rate) / 16;
 	sys_write8(dl >> 8, LPC17XX_UART_DLM);
 	sys_write8(dl & 0xff, LPC17XX_UART_DLL);
 	sys_clear_bit(LPC17XX_UART_LCR, 7);
+}
+
+static int uart_lpc17xx_init(struct device *dev)
+{
+	const struct uart_lpc17xx_config *cfg = DEV_CFG(dev);
+
+	/* Enable power to UART0 */
+	clock_control_on(device_get_binding(CONFIG_CLOCK_LABEL),
+			 (clock_control_subsys_t) &cfg->pclk);
+
+	/* Set word-len = 8, Stop bit = 1,
+	 * Disable parity generation and checking,
+	 * odd parity.
+	 */
+	sys_write32(0x03, LPC17XX_UART_LCR);
+
+	/* Set baud rate */
+	uart_lpc17xx_baudrate_set(dev);
 
 	/* Enable FIFO,
 	 * Rx Trigger level is one character in FIFO
@@ -242,8 +275,12 @@ static const struct uart_driver_api uart_lpc17xx_driver_api = {
 static void irq_config_func_0(struct device *dev);
 #endif
 
-static struct uart_device_config uart0_cfg = {
-	.base = (unsigned int)CONFIG_UART0_BASE_ADDR,
+static struct uart_lpc17xx_config uart0_cfg = {
+	.base = CONFIG_UART0_BASE_ADDR,
+	.pclk = {
+		.en = CONFIG_UART0_CLOCK_ENABLE,
+		.sel = CONFIG_UART0_CLOCK_SELECT
+	},
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	.irq_config_func = irq_config_func_0,
 #endif
@@ -274,5 +311,4 @@ static void irq_config_func_0(struct device *dev)
 
 #endif /* CONFIG_UART_LPC17XX_PORT_0 */
 
-/* FIXME: Enable UART 1/2/3 */
-
+/* FIXME: Enable UART 1/2 */

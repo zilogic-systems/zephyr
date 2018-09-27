@@ -16,43 +16,6 @@
 #include <cortex_m/exc.h>
 #include <sys_io.h>
 
-/*
- * FIXME: To be moved to board specific file / driver / clock driver.
- */
-static void nxp_lpc17xx_uart_init(void)
-{
-	u32_t regval;
-
-	/* Step 1: Enable power on UART0
-	 * UART0 is enabled on reset
-	 */
-	regval = sys_read32(LPC17XX_SYSCON_PCONP);
-	regval &= ~SYSCON_PCLKSEL0_UART0_MASK;
-	sys_write32(regval, LPC17XX_SYSCON_PCONP);
-
-	/* Step 2: Enable clocking on UART
-	 * PCCLK_peripheral = CCLK
-	 */
-	regval = sys_read32(LPC17XX_SYSCON_PCLKSEL0);
-	regval &= ~SYSCON_PCLKSEL0_UART0_MASK;
-	regval |= 0x01 << SYSCON_PCLKSEL0_UART0_SHIFT;
-	sys_write32(regval, LPC17XX_SYSCON_PCLKSEL0);
-
-	/* Configure TXD pin */
-	regval = sys_read32(LPC17XX_PINSEL0);
-	regval &= ~SYSCON_PINSEL0_TXD0_MASK;
-	regval |= 0x01 << SYSCON_PINSEL0_TXD0_SHIFT;
-	sys_write32(regval, LPC17XX_PINSEL0);
-
-	/* Configure RXD pin */
-	regval = sys_read32(LPC17XX_PINSEL0);
-	regval &= ~SYSCON_PINSEL0_RXD0_MASK;
-	regval |= 0x01 << SYSCON_PINSEL0_RXD0_SHIFT;
-	sys_write32(regval, LPC17XX_PINSEL0);
-
-	/* Pin mode is pull-up by default */
-}
-
 static void flash_latency(u32_t frequency)
 {
 	u32_t wait_states;
@@ -80,7 +43,8 @@ static void osc_sel(void)
 	sys_set_bit(SCS, OSCEN);			/* Enable Main OSC */
 	flash_latency(CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC);
 	/* Wait for main OSC to start up */
-	while (sys_test_bit(SCS, OSCSTAT) == 0);
+	while (sys_test_bit(SCS, OSCSTAT) == 0)
+		;
 	/* Clock soure selection as main oscillator */
 	sys_set_bit(CLKSRCSEL, 0);
 	/* Clock soure selection as main oscillator */
@@ -154,7 +118,8 @@ static void pll_config(u32_t crystal, u32_t frequency)
 	/* set core clock divider CCLKSEL */
 	sys_write32((best_corediv - 1) << CCLKSEL_bit, CCLKCFG);
 	/* wait for PLL0 lock */
-	while (sys_test_bit(SCS, OSCSTAT) == 0);
+	while (sys_test_bit(SCS, OSCSTAT) == 0)
+		;
 	/* connect PLL0 as clock source */
 	sys_set_bit(PLL0CON, PLLC0);
 	pll0_feed();				 /* validate connection */
@@ -209,9 +174,6 @@ static int nxp_lpc17xx_init(struct device *arg)
 
 	/* restore interrupt state */
 	irq_unlock(oldLevel);
-
-	/* Initialize UART() */
-	nxp_lpc17xx_uart_init();
 
 	return 0;
 }
