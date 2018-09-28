@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef H_ZEPHYR_SMP_
-#define H_ZEPHYR_SMP_
+#ifndef ZEPHYR_INCLUDE_MGMT_SMP_H_
+#define ZEPHYR_INCLUDE_MGMT_SMP_H_
 
 #ifdef __cplusplus
 extern "C" {
@@ -65,7 +65,7 @@ typedef int zephyr_smp_transport_ud_copy_fn(struct net_buf *dst,
  * connection-specific information in the net_buf user data (e.g., the BLE
  * transport stores the connection reference that has to be decreased).
  *
- * @param nb                    Contains a user_data pointer to be free'd.
+ * @param nb                    Contains a user_data pointer to be freed.
  */
 typedef void zephyr_smp_transport_ud_free_fn(void *ud);
 

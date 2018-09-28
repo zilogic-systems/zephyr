@@ -1,0 +1,19 @@
+# Kconfig - LPC17XX I2C
+#
+# Copyright 2018, Zilogic Systems
+#
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig I2C_LPC17XX
+	bool "LPC17xx serial driver"
+	depends on I2C
+	select I2C_HAS_DRIVER
+	help
+	  This option enables the LPC17xx I2C driver.
+
+menuconfig I2C_LPC17XX_PORT_0
+	bool "Enable LPC17xx I2C 0"
+ 	depends on I2C_LPC17XX
+ 	help
+ 	  Enable support for I2C0 port in the driver. Say y here
+	  if you want to use I2C0

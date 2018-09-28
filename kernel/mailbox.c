@@ -35,7 +35,7 @@ K_STACK_DEFINE(async_msg_free, CONFIG_NUM_MBOX_ASYNC_MSGS);
 /* allocate an asynchronous message descriptor */
 static inline void mbox_async_alloc(struct k_mbox_async **async)
 {
-	k_stack_pop(&async_msg_free, (u32_t *)async, K_FOREVER);
+	(void)k_stack_pop(&async_msg_free, (u32_t *)async, K_FOREVER);
 }
 
 /* free an asynchronous message descriptor */
@@ -332,7 +332,7 @@ void k_mbox_async_put(struct k_mbox *mbox, struct k_mbox_msg *tx_msg,
 	async->tx_msg._syncing_thread = (struct k_thread *)&async->thread;
 	async->tx_msg._async_sem = sem;
 
-	mbox_message_put(mbox, &async->tx_msg, K_FOREVER);
+	(void)mbox_message_put(mbox, &async->tx_msg, K_FOREVER);
 }
 #endif
 
@@ -347,7 +347,7 @@ void k_mbox_data_get(struct k_mbox_msg *rx_msg, void *buffer)
 
 	/* copy message data to buffer, then dispose of message */
 	if ((rx_msg->tx_data != NULL) && (rx_msg->size > 0)) {
-		memcpy(buffer, rx_msg->tx_data, rx_msg->size);
+		(void)memcpy(buffer, rx_msg->tx_data, rx_msg->size);
 	}
 	mbox_message_dispose(rx_msg);
 }

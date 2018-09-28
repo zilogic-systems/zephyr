@@ -3,8 +3,8 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#ifndef LOG_FRONTEND_H
-#define LOG_FRONTEND_H
+#ifndef ZEPHYR_INCLUDE_LOGGING_LOG_CORE_H_
+#define ZEPHYR_INCLUDE_LOGGING_LOG_CORE_H_
 
 #include <logging/log_msg.h>
 #include <logging/log_instance.h>
@@ -98,7 +98,7 @@ extern "C" {
 #define LOG_CURRENT_MODULE_ID()						\
 	_LOG_EVAL(							\
 	  _LOG_LEVEL(),							\
-	  (log_const_source_id(&LOG_ITEM_CONST_DATA(LOG_MODULE_NAME))),	\
+	  (log_const_source_id(__log_current_const_data_get())),	\
 	  (0)								\
 	)
 
@@ -109,7 +109,7 @@ extern "C" {
 #define LOG_CURRENT_DYNAMIC_DATA_ADDR()			\
 	_LOG_EVAL(					\
 	  _LOG_LEVEL(),					\
-	  (&LOG_ITEM_DYNAMIC_DATA(LOG_MODULE_NAME)),	\
+	  (__log_current_dynamic_data_get()),		\
 	  ((struct log_source_dynamic_data *)0)		\
 	)
 
@@ -226,33 +226,34 @@ extern "C" {
 /******************************************************************************/
 /****************** Macros for hexdump logging ********************************/
 /******************************************************************************/
-#define __LOG_HEXDUMP(_level, _id, _filter, _data, _length)	   \
-	do {							   \
-		if (_LOG_CONST_LEVEL_CHECK(_level) &&		   \
-		    (_level <= LOG_RUNTIME_FILTER(_filter))) {	   \
-			struct log_msg_ids src_level = {	   \
-				.level = _level,		   \
-				.source_id = _id,		   \
-				.domain_id = CONFIG_LOG_DOMAIN_ID  \
-			};					   \
-			log_hexdump(_data, _length, src_level);	   \
-		}						   \
+#define __LOG_HEXDUMP(_level, _id, _filter, _data, _length, _str)     \
+	do {							      \
+		if (_LOG_CONST_LEVEL_CHECK(_level) &&		      \
+		    (_level <= LOG_RUNTIME_FILTER(_filter))) {	      \
+			struct log_msg_ids src_level = {	      \
+				.level = _level,		      \
+				.source_id = _id,		      \
+				.domain_id = CONFIG_LOG_DOMAIN_ID     \
+			};					      \
+			log_hexdump(_str, _data, _length, src_level); \
+		}						      \
 	} while (0)
 
-#define _LOG_HEXDUMP(_level, _data, _length)		       \
+#define _LOG_HEXDUMP(_level, _data, _length, _str)	       \
 	__LOG_HEXDUMP(_level,				       \
 		      LOG_CURRENT_MODULE_ID(),		       \
 		      LOG_CURRENT_DYNAMIC_DATA_ADDR(),	       \
-		      _data, _length)
+		      _data, _length, _str)
 
-#define _LOG_HEXDUMP_INSTANCE(_level, _inst, _data, _length)	 \
-	__LOG_HEXDUMP(_level,					 \
-		      IS_ENABLED(CONFIG_LOG_RUNTIME_FILTERING) ? \
-		      LOG_DYNAMIC_ID_GET(_inst) :		 \
-		      LOG_CONST_ID_GET(_inst),			 \
-		      _inst,					 \
-		      _data,					 \
-		      _length)
+#define _LOG_HEXDUMP_INSTANCE(_level, _inst, _data, _length, _str) \
+	__LOG_HEXDUMP(_level,					   \
+		      IS_ENABLED(CONFIG_LOG_RUNTIME_FILTERING) ?   \
+		      LOG_DYNAMIC_ID_GET(_inst) :		   \
+		      LOG_CONST_ID_GET(_inst),			   \
+		      _inst,					   \
+		      _data,					   \
+		      _length,					   \
+		      _str)
 
 /******************************************************************************/
 /****************** Filtering macros ******************************************/
@@ -444,11 +445,13 @@ void log_n(const char *str,
 
 /** @brief Hexdump log.
  *
+ * @param str		String.
  * @param data		Data.
  * @param length	Data length.
  * @param src_level	Log identification.
  */
-void log_hexdump(const u8_t *data,
+void log_hexdump(const char *str,
+		 const u8_t *data,
 		 u32_t length,
 		 struct log_msg_ids src_level);
 
@@ -472,4 +475,4 @@ void log_generic(struct log_msg_ids src_level, const char *fmt, va_list ap);
 }
 #endif
 
-#endif /* LOG_FRONTEND_H */
+#endif /* ZEPHYR_INCLUDE_LOGGING_LOG_CORE_H_ */

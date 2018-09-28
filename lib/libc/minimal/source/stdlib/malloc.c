@@ -22,7 +22,7 @@ void *malloc(size_t size)
 	void *ret;
 
 	ret = sys_mem_pool_alloc(&z_malloc_mem_pool, size);
-	if (!ret) {
+	if (ret == NULL) {
 		errno = ENOMEM;
 	}
 
@@ -73,11 +73,20 @@ static bool size_t_mul_overflow(size_t a, size_t b, size_t *res)
 
 void *calloc(size_t nmemb, size_t size)
 {
+	void *ret;
+
 	if (size_t_mul_overflow(nmemb, size, &size)) {
 		errno = ENOMEM;
 		return NULL;
 	}
-	return malloc(size);
+
+	ret = malloc(size);
+
+	if (ret != NULL) {
+		(void)memset(ret, 0, size);
+	}
+
+	return ret;
 }
 
 void *realloc(void *ptr, size_t requested_size)
@@ -111,7 +120,7 @@ void *realloc(void *ptr, size_t requested_size)
 	}
 
 	new_ptr = malloc(requested_size);
-	if (!new_ptr) {
+	if (new_ptr == NULL) {
 		return NULL;
 	}
 

@@ -1,0 +1,12 @@
+if BOARD_ZKIT_ARM_1769
+
+config BOARD
+	default "ZKit-ARM-1769"
+
+if UART_LPC17XX
+
+config UART_LPC17XX_PORT_0
+	def_bool y if UART_CONSOLE
+
+endif # UART_LPC17XX
+endif # BOARD_ZKIT_ARM_1769

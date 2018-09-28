@@ -1,0 +1,11 @@
+# Kconfig - NXP LPC17XX SPI
+#
+# Copyright (c) 2018 Zilogic Systems.
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig SPI_LPC17XX
+	bool "LPC17XX series SPI driver"
+	depends on SOC_FAMILY_LPC17XX
+	select HAS_DTS_SPI
+	help
+	  Enable support for the LPC17XX SPI driver.

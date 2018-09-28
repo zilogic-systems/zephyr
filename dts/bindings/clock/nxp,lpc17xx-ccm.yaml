@@ -1,0 +1,37 @@
+#
+# Copyright (c) 2018, Zilogic Systems.
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+---
+title: LPC17XX CCM
+id: nxp,lpc17xx-ccm
+version: 0.1
+
+description: >
+    This binding gives a base representation of the LPC17xx Clock control
+
+properties:
+    compatible:
+      type: string
+      category: required
+      description: compatible strings
+      constraint: "nxp,lpc17xx-ccm"
+
+    reg:
+      type: array
+      description: mmio register space
+      generation: define
+      category: required
+
+    label:
+      type: string
+      category: required
+      description: Human readable string describing the device (used by Zephyr for API name)
+      generation: define
+
+"#cells":
+  - enable   # Periperal Clock to be Enabled
+  - select   # Clock Div value select (0 = CCLK / 4, 1 = CCLK, 2 = CCLK / 2, 3 = CCLK / 8)
+
+...

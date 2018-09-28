@@ -58,8 +58,8 @@
  * discouraged.
  */
 
-#ifndef ___ASSERT__H_
-#define ___ASSERT__H_
+#ifndef ZEPHYR_INCLUDE_MISC___ASSERT_H_
+#define ZEPHYR_INCLUDE_MISC___ASSERT_H_
 
 #ifdef CONFIG_ASSERT
 #ifndef __ASSERT_ON
@@ -90,16 +90,16 @@ extern void posix_exit(int exit_code);
 	}
 #endif
 
-#define __ASSERT(test, fmt, ...)                                   \
-	do {                                                       \
-		if (!(test)) {                                     \
-			printk("ASSERTION FAIL [%s] @ %s:%d:\n\t", \
-			       _STRINGIFY(test),                   \
-			       __FILE__,                           \
-			       __LINE__);                          \
-			printk(fmt, ##__VA_ARGS__);                \
-			__ASSERT_POST;                             \
-		}                                                  \
+#define __ASSERT(test, fmt, ...)                                         \
+	do {                                                             \
+		if (!(test)) {                                           \
+			(void)printk("ASSERTION FAIL [%s] @ %s:%d:\n\t", \
+			       _STRINGIFY(test),                         \
+			       __FILE__,                                 \
+			       __LINE__);                                \
+			(void)printk(fmt, ##__VA_ARGS__);                \
+			__ASSERT_POST;                                   \
+		}                                                        \
 	} while ((0))
 
 #define __ASSERT_EVAL(expr1, expr2, test, fmt, ...)                \
@@ -126,4 +126,4 @@ extern void posix_exit(int exit_code);
 
 #define __ASSERT_NO_MSG(test) __ASSERT(test, "")
 
-#endif /* ___ASSERT__H_ */
+#endif /* ZEPHYR_INCLUDE_MISC___ASSERT_H_ */

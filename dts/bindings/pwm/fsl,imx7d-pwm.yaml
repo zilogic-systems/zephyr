@@ -16,9 +16,6 @@ inherits:
 
 properties:
     compatible:
-      type: string
-      category: required
-      description: compatible strings
       constraint: "fsl,imx7d-pwm"
 
     reg:
@@ -37,6 +34,12 @@ properties:
      type: int
      category: required
      description: Set the PWM prescale between 0 and 4096
+     generation: define
+
+    rdc:
+     type: int
+     category: required
+     description: Set the RDC permission for this peripheral
      generation: define
 
 ...

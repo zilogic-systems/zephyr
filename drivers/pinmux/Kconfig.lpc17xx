@@ -1,0 +1,12 @@
+# Kconfig - pinmux for LPC17XX
+#
+# Copyright (c) 2018, Zilogic Systems
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+menuconfig PINMUX_LPC17XX
+	bool "LPC17XX pinmux driver"
+	default n	
+	help
+	  Enable the LPC17XX pinmux driver.

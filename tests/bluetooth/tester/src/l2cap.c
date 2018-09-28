@@ -80,7 +80,7 @@ static void disconnected_cb(struct bt_l2cap_chan *l2cap_chan)
 	struct channel *chan = CONTAINER_OF(l2cap_chan, struct channel, le);
 	struct bt_conn_info info;
 
-	memset(&ev, 0, sizeof(struct l2cap_disconnected_ev));
+	(void)memset(&ev, 0, sizeof(struct l2cap_disconnected_ev));
 
 	/* TODO: ev.result */
 	ev.chan_id = chan->chan_id;
@@ -137,7 +137,7 @@ static void connect(u8_t *data, u16_t len)
 	struct channel *chan;
 	int err;
 
-	conn = bt_conn_lookup_addr_le((bt_addr_le_t *) data);
+	conn = bt_conn_lookup_addr_le(BT_ID_DEFAULT, (bt_addr_le_t *)data);
 	if (!conn) {
 		goto fail;
 	}
@@ -308,7 +308,7 @@ static void supported_commands(u8_t *data, u16_t len)
 	u8_t cmds[1];
 	struct l2cap_read_supported_commands_rp *rp = (void *) cmds;
 
-	memset(cmds, 0, sizeof(cmds));
+	(void)memset(cmds, 0, sizeof(cmds));
 
 	tester_set_bit(cmds, L2CAP_READ_SUPPORTED_COMMANDS);
 	tester_set_bit(cmds, L2CAP_CONNECT);

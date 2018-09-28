@@ -17,8 +17,8 @@
  * simplifies the adding and removing of nodes to/from the list.
  */
 
-#ifndef _misc_dlist__h_
-#define _misc_dlist__h_
+#ifndef ZEPHYR_INCLUDE_MISC_DLIST_H_
+#define ZEPHYR_INCLUDE_MISC_DLIST_H_
 
 #include <stddef.h>
 
@@ -103,7 +103,7 @@ typedef struct _dnode sys_dnode_t;
  */
 #define SYS_DLIST_FOR_EACH_NODE_SAFE(__dl, __dn, __dns)			\
 	for (__dn = sys_dlist_peek_head(__dl),				\
-		     __dns = sys_dlist_peek_next(__dl, __dn);  		\
+		     __dns = sys_dlist_peek_next(__dl, __dn);		\
 	     __dn; __dn = __dns,					\
 		     __dns = sys_dlist_peek_next(__dl, __dn))
 
@@ -191,7 +191,7 @@ static inline void sys_dlist_init(sys_dlist_t *list)
 	list->tail = (sys_dnode_t *)list;
 }
 
-#define SYS_DLIST_STATIC_INIT(ptr_to_list) {{(ptr_to_list)}, {(ptr_to_list)}}
+#define SYS_DLIST_STATIC_INIT(ptr_to_list) { {(ptr_to_list)}, {(ptr_to_list)} }
 
 /**
  * @brief check if a node is the list's head
@@ -491,4 +491,4 @@ static inline sys_dnode_t *sys_dlist_get(sys_dlist_t *list)
 }
 #endif
 
-#endif /* _misc_dlist__h_ */
+#endif /* ZEPHYR_INCLUDE_MISC_DLIST_H_ */

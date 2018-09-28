@@ -1,0 +1,49 @@
+if SOC_LPC1769
+
+config SOC
+       string
+       default "lpc1769"
+
+if CLOCK_CONTROL
+
+config CLOCK_CONTROL_LPC17XX
+	def_bool y
+
+endif # CLOCK_CONTROL
+
+if PINMUX
+
+config PINMUX_LPC17XX
+	def_bool y
+
+endif # PINMUX
+
+if SERIAL
+
+config UART_LPC17XX
+	def_bool y
+
+endif # SERIAL
+
+if SPI
+
+config SPI_LPC17XX
+	def_bool y
+
+endif # SPI
+
+if GPIO
+
+config GPIO_LPC17XX
+	def_bool y
+
+endif # GPIO
+
+if I2C
+
+config I2C_LPC17XX
+	def_bool y
+
+endif # i2C
+
+endif

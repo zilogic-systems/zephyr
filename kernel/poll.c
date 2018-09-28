@@ -22,6 +22,7 @@
 #include <syscall_handler.h>
 #include <misc/slist.h>
 #include <misc/dlist.h>
+#include <misc/util.h>
 #include <misc/__assert.h>
 
 void k_poll_event_init(struct k_poll_event *event, u32_t type,
@@ -29,7 +30,7 @@ void k_poll_event_init(struct k_poll_event *event, u32_t type,
 {
 	__ASSERT(mode == K_POLL_MODE_NOTIFY_ONLY,
 		 "only NOTIFY_ONLY mode is supported\n");
-	__ASSERT(type < (1 << _POLL_NUM_TYPES), "invalid type\n");
+	__ASSERT(type < (BIT(_POLL_NUM_TYPES)), "invalid type\n");
 	__ASSERT(obj, "must provide an object\n");
 
 	event->poller = NULL;
@@ -79,8 +80,9 @@ static inline void add_event(sys_dlist_t *events, struct k_poll_event *event,
 	struct k_poll_event *pending;
 
 	pending = (struct k_poll_event *)sys_dlist_peek_tail(events);
-	if (!pending || _is_t1_higher_prio_than_t2(pending->poller->thread,
-						   poller->thread)) {
+	if ((pending == NULL) ||
+		_is_t1_higher_prio_than_t2(pending->poller->thread,
+		poller->thread)) {
 		sys_dlist_append(events, &event->_node);
 		return;
 	}
@@ -274,7 +276,7 @@ Z_SYSCALL_HANDLER(k_poll, events, num_events, timeout)
 		irq_unlock(key);
 		goto oops_free;
 	}
-	memcpy(events_copy, (void *)events, bounds);
+	(void)memcpy(events_copy, (void *)events, bounds);
 	irq_unlock(key);
 
 	/* Validate what's inside events_copy */
@@ -305,7 +307,7 @@ Z_SYSCALL_HANDLER(k_poll, events, num_events, timeout)
 	}
 
 	ret = k_poll(events_copy, num_events, timeout);
-	memcpy((void *)events, events_copy, bounds);
+	(void)memcpy((void *)events, events_copy, bounds);
 out_free:
 	k_free(events_copy);
 out:
@@ -339,7 +341,7 @@ static int signal_poll_event(struct k_poll_event *event, u32_t state)
 
 	_unpend_thread(thread);
 	_set_thread_return_value(thread,
-				 state == K_POLL_STATE_NOT_READY ? -EINTR : 0);
+				 state == K_POLL_STATE_CANCELLED ? -EINTR : 0);
 
 	if (!_is_thread_ready(thread)) {
 		goto ready_event;
@@ -357,7 +359,7 @@ void _handle_obj_poll_events(sys_dlist_t *events, u32_t state)
 	struct k_poll_event *poll_event;
 
 	poll_event = (struct k_poll_event *)sys_dlist_get(events);
-	if (poll_event) {
+	if (poll_event != NULL) {
 		(void) signal_poll_event(poll_event, state);
 	}
 }
@@ -408,7 +410,7 @@ int _impl_k_poll_signal(struct k_poll_signal *signal, int result)
 	signal->signaled = 1;
 
 	poll_event = (struct k_poll_event *)sys_dlist_get(&signal->poll_events);
-	if (!poll_event) {
+	if (poll_event == NULL) {
 		irq_unlock(key);
 		return 0;
 	}

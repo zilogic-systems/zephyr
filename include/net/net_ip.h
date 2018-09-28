@@ -10,8 +10,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef __NET_IP_H
-#define __NET_IP_H
+#ifndef ZEPHYR_INCLUDE_NET_NET_IP_H_
+#define ZEPHYR_INCLUDE_NET_NET_IP_H_
 
 /**
  * @brief IPv4/IPv6 primitives and helpers
@@ -59,6 +59,8 @@ enum net_ip_protocol_secure {
 	IPPROTO_TLS_1_0 = 256,
 	IPPROTO_TLS_1_1 = 257,
 	IPPROTO_TLS_1_2 = 258,
+	IPPROTO_DTLS_1_0 = 272,
+	IPPROTO_DTLS_1_2 = 273,
 };
 
 /** Socket type */
@@ -177,7 +179,11 @@ struct net_addr {
 extern const struct in6_addr in6addr_any;
 extern const struct in6_addr in6addr_loopback;
 
+/* Defined by POSIX. INET6_ADDRSTRLEN accounts for mapped IPv4 addresses. */
+#define INET_ADDRSTRLEN 16
 #define INET6_ADDRSTRLEN 46
+
+/* These are for internal usage of the stack */
 #define NET_IPV6_ADDR_LEN sizeof("xxxx:xxxx:xxxx:xxxx:xxxx:xxxx:xxxx:xxxx")
 #define NET_IPV4_ADDR_LEN sizeof("xxx.xxx.xxx.xxx")
 
@@ -196,15 +202,15 @@ extern const struct in6_addr in6addr_loopback;
 
 /** Network packet priority settings described in IEEE 802.1Q Annex I.1 */
 enum net_priority {
-	NET_PRIORITY_BK = 0, /* Background (lowest)                */
-	NET_PRIORITY_BE = 1, /* Best effort (default)              */
+	NET_PRIORITY_BK = 1, /* Background (lowest)                */
+	NET_PRIORITY_BE = 0, /* Best effort (default)              */
 	NET_PRIORITY_EE = 2, /* Excellent effort                   */
 	NET_PRIORITY_CA = 3, /* Critical applications (highest)    */
 	NET_PRIORITY_VI = 4, /* Video, < 100 ms latency and jitter */
 	NET_PRIORITY_VO = 5, /* Voice, < 10 ms latency and jitter  */
 	NET_PRIORITY_IC = 6, /* Internetwork control               */
 	NET_PRIORITY_NC = 7  /* Network control                    */
-};
+} __packed;
 
 /** IPv6/IPv4 network connection tuple */
 struct net_tuple {
@@ -227,10 +233,10 @@ enum net_addr_type {
 	NET_ADDR_DHCP,
 	NET_ADDR_MANUAL,
 	NET_ADDR_OVERRIDABLE,
-};
+} __packed;
 
 #if NET_LOG_ENABLED > 0
-static inline char *net_addr_type2str(enum net_addr_type type)
+static inline const char *net_addr_type2str(enum net_addr_type type)
 {
 	switch (type) {
 	case NET_ADDR_AUTOCONF:
@@ -249,7 +255,7 @@ static inline char *net_addr_type2str(enum net_addr_type type)
 	return "<unknown>";
 }
 #else /* NET_LOG_ENABLED */
-static inline char *net_addr_type2str(enum net_addr_type type)
+static inline const char *net_addr_type2str(enum net_addr_type type)
 {
 	ARG_UNUSED(type);
 
@@ -263,13 +269,13 @@ enum net_addr_state {
 	NET_ADDR_TENTATIVE = 0,
 	NET_ADDR_PREFERRED,
 	NET_ADDR_DEPRECATED,
-};
+} __packed;
 
 struct net_ipv6_hdr {
 	u8_t vtc;
 	u8_t tcflow;
 	u16_t flow;
-	u8_t len[2];
+	u16_t len;
 	u8_t nexthdr;
 	u8_t hop_limit;
 	struct in6_addr src;
@@ -286,7 +292,7 @@ struct net_ipv6_frag_hdr {
 struct net_ipv4_hdr {
 	u8_t vhl;
 	u8_t tos;
-	u8_t len[2];
+	u16_t len;
 	u8_t id[2];
 	u8_t offset[2];
 	u8_t ttl;
@@ -900,7 +906,7 @@ int net_addr_pton(sa_family_t family, const char *src, void *dst);
  * @param family IP address family (AF_INET or AF_INET6)
  * @param src Pointer to struct in_addr if family is AF_INET or
  *        pointer to struct in6_addr if family is AF_INET6
- * @param dst IP address in a non-null terminated string
+ * @param dst Buffer for IP address as a null terminated string
  * @param size Number of bytes available in the buffer
  *
  * @return dst pointer if ok, NULL if error
@@ -1048,4 +1054,4 @@ static inline u8_t net_priority2vlan(enum net_priority priority)
  */
 
 
-#endif /* __NET_IP_H */
+#endif /* ZEPHYR_INCLUDE_NET_NET_IP_H_ */

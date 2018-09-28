@@ -1,0 +1,105 @@
+#include <arm/armv7-m.dtsi>
+#include <dt-bindings/gpio/gpio.h>
+
+/ {
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu@0 {
+			compatible = "arm,cortex-m3";
+			reg = <0>;
+		};
+	};
+
+	sram0:memory@2007C000 {
+		compatible = "mmio-sram";
+		reg = <0x10000000 0x8000>;
+	};
+
+	clock: clock-controller@400FC000 {
+		compatible = "nxp,lpc17xx-ccm";
+		reg = <0x400FC000 0x1C8>;
+		label = "CCM";
+
+		clock-controller;
+		#clock-cells = <2>;
+	};
+
+	soc {
+		flash0:flash@0 {
+			reg = <0 0x80000>;
+		};
+
+		pinmux: pinmux@4002C000 {
+			compatible = "nxp,lpc17xx-pinmux";
+			reg = <0x4002C000 0x7C>;
+		};
+
+		uart0: uart@4000C000 {
+		       compatible = "nxp,lpc17xx-uart";
+		       reg = <0x4000C000 0x4c>;
+		       label = "UART_0";
+		};
+
+		spi0: spi@40088000 {
+			compatible = "nxp,lpc17xx-spi";
+			reg = <0x40088000 0x24>;
+			interrupts = <14 3>;
+			label = "SPI_0";
+			clocks = <&clock 21 0>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
+
+		spi1: spi@40030000 {
+			compatible = "nxp,lpc17xx-spi";
+			reg = <0x40030000 0x24>;
+			interrupts = <15 3>;
+			label = "SPI_1";
+			clocks = <&clock 10 0>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+		};
+
+		gpio: gpio@2009C000 {
+			compatible = "nxp,lpc17xx-gpio";
+			reg = <0x2009C000 0x9C>;
+			label = "GPIO";
+			gpio-controller;
+			#gpio-cells = <2>;
+			clocks = <&clock 15 0>;
+		};
+
+		i2c0: i2c@4001C000 {
+		       compatible = "nxp,lpc17xx-i2c";
+		       reg = <0x4001C000 0x40>;
+		       interrupts = <10 3>;
+		       label = "I2C_0";
+		       clocks = <&clock 7 1>
+		};
+
+		i2c1: i2c@4001C000 {
+		       compatible = "nxp,lpc17xx-i2c";
+		       reg = <0x4005C000 0x40>;
+		       interrupts = <10 3>;
+		       label = "I2C_1";
+		       clocks = <&clock 19 1>
+		       status = "disable";
+		};
+
+		i2c2: i2c@4001C000 {
+		       compatible = "nxp,lpc17xx-i2c";
+		       reg = <0x400A0000 0x40>;
+		       interrupts = <10 3>;
+		       label = "I2C_2";
+		       clocks = <&clock 26 1>
+		       status = "disable"
+		};
+	};
+};
+
+&nvic {
+	arm,num-irq-priority-bits = <5>;
+};

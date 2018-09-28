@@ -169,7 +169,7 @@ static struct k_thread *next_up(void)
 
 	/* Choose the best thread that is not current */
 	struct k_thread *th = _priq_run_best(&_kernel.ready_q.runq);
-	if (!th) {
+	if (th == NULL) {
 		th = _current_cpu->idle_thread;
 	}
 
@@ -263,22 +263,20 @@ static void pend(struct k_thread *thread, _wait_q_t *wait_q, s32_t timeout)
 	 */
 	if (timeout != K_FOREVER) {
 		s32_t ticks = _TICK_ALIGN + _ms_to_ticks(timeout);
-		int key = irq_lock();
+		unsigned int key = irq_lock();
 
 		_add_thread_timeout(thread, wait_q, ticks);
 		irq_unlock(key);
 	}
 
-	if (wait_q) {
+	if (wait_q != NULL) {
 #ifdef CONFIG_WAITQ_SCALABLE
 		thread->base.pended_on = wait_q;
 #endif
 		_priq_wait_add(&wait_q->waitq, thread);
 	}
 
-#ifdef CONFIG_KERNEL_EVENT_LOGGER_THREAD
-	_sys_k_event_logger_thread_pend(thread);
-#endif
+	sys_trace_thread_pend(thread);
 }
 
 void _pend_thread(struct k_thread *thread, _wait_q_t *wait_q, s32_t timeout)
@@ -335,8 +333,8 @@ struct k_thread *_unpend_first_thread(_wait_q_t *wait_q)
 {
 	struct k_thread *t = _unpend1_no_timeout(wait_q);
 
-	if (t) {
-		_abort_thread_timeout(t);
+	if (t != NULL) {
+		(void)_abort_thread_timeout(t);
 	}
 
 	return t;
@@ -345,7 +343,7 @@ struct k_thread *_unpend_first_thread(_wait_q_t *wait_q)
 void _unpend_thread(struct k_thread *thread)
 {
 	_unpend_thread_no_timeout(thread);
-	_abort_thread_timeout(thread);
+	(void)_abort_thread_timeout(thread);
 }
 
 /* FIXME: this API is glitchy when used in SMP.  If the thread is
@@ -371,13 +369,14 @@ void _thread_priority_set(struct k_thread *thread, int prio)
 			thread->base.prio = prio;
 		}
 	}
+	sys_trace_thread_priority_set(thread);
 
 	if (need_sched) {
 		_reschedule(irq_lock());
 	}
 }
 
-int _reschedule(int key)
+void _reschedule(int key)
 {
 #ifdef CONFIG_SMP
 	if (!_current_cpu->swap_ok) {
@@ -395,13 +394,13 @@ int _reschedule(int key)
 	return _Swap(key);
 #else
 	if (_get_next_ready_thread() != _current) {
-		return _Swap(key);
+		(void)_Swap(key);
+		return;
 	}
 #endif
 
  noswap:
 	irq_unlock(key);
-	return 0;
 }
 
 void k_sched_lock(void)
@@ -591,8 +590,8 @@ struct k_thread *_priq_mq_best(struct _priq_mq *pq)
 }
 
 #ifdef CONFIG_TIMESLICING
-extern s32_t _time_slice_duration;    /* Measured in ms */
-extern s32_t _time_slice_elapsed;     /* Measured in ms */
+extern s32_t _time_slice_duration;    /* Measured in ticks */
+extern s32_t _time_slice_elapsed;     /* Measured in ticks */
 extern int _time_slice_prio_ceiling;
 
 void k_sched_time_slice_set(s32_t duration_in_ms, int prio)
@@ -600,7 +599,7 @@ void k_sched_time_slice_set(s32_t duration_in_ms, int prio)
 	__ASSERT(duration_in_ms >= 0, "");
 	__ASSERT((prio >= 0) && (prio < CONFIG_NUM_PREEMPT_PRIORITIES), "");
 
-	_time_slice_duration = duration_in_ms;
+	_time_slice_duration = _ms_to_ticks(duration_in_ms);
 	_time_slice_elapsed = 0;
 	_time_slice_prio_ceiling = prio;
 }
@@ -623,13 +622,22 @@ int _is_thread_time_slicing(struct k_thread *thread)
 	LOCKED(&sched_lock) {
 		struct k_thread *next = _priq_run_best(&_kernel.ready_q.runq);
 
-		if (next) {
+		if (next != NULL) {
 			ret = thread->base.prio == next->base.prio;
 		}
 	}
 
 	return ret;
 }
+
+#ifdef CONFIG_TICKLESS_KERNEL
+void z_reset_timeslice(void)
+{
+	if (_is_thread_time_slicing(_get_next_ready_thread())) {
+		_set_time(_time_slice_duration);
+	}
+}
+#endif
 
 /* Must be called with interrupts locked */
 /* Should be called only immediately before a thread switch */
@@ -689,6 +697,11 @@ void _sched_init(void)
 	for (int i = 0; i < ARRAY_SIZE(_kernel.ready_q.runq.queues); i++) {
 		sys_dlist_init(&_kernel.ready_q.runq.queues[i]);
 	}
+#endif
+
+#ifdef CONFIG_TIMESLICING
+	k_sched_time_slice_set(CONFIG_TIMESLICE_SIZE,
+		CONFIG_TIMESLICE_PRIORITY);
 #endif
 }
 
@@ -776,10 +789,10 @@ void _impl_k_yield(void)
 	}
 
 #ifdef CONFIG_SMP
-	_Swap(irq_lock());
+	(void)_Swap(irq_lock());
 #else
 	if (_get_next_ready_thread() != _current) {
-		_Swap(irq_lock());
+		(void)_Swap(irq_lock());
 	}
 #endif
 }
@@ -814,7 +827,7 @@ void _impl_k_sleep(s32_t duration)
 	_remove_thread_from_ready_q(_current);
 	_add_thread_timeout(_current, NULL, ticks);
 
-	_Swap(key);
+	(void)_Swap(key);
 #endif
 }
 
@@ -834,7 +847,7 @@ Z_SYSCALL_HANDLER(k_sleep, duration)
 
 void _impl_k_wakeup(k_tid_t thread)
 {
-	int key = irq_lock();
+	unsigned int key = irq_lock();
 
 	/* verify first if thread is not waiting on an object */
 	if (_is_thread_pending(thread)) {

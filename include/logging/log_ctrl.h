@@ -3,8 +3,8 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#ifndef LOG_CTRL_H
-#define LOG_CTRL_H
+#ifndef ZEPHYR_INCLUDE_LOGGING_LOG_CTRL_H_
+#define ZEPHYR_INCLUDE_LOGGING_LOG_CTRL_H_
 
 #include <logging/log_backend.h>
 
@@ -147,7 +147,7 @@ void log_filter_set(struct log_backend const *const backend,
  * @brief Enable backend with initial maximum filtering level.
  *
  * @param backend	Backend instance.
- * @param ctx		User csontext.
+ * @param ctx		User context.
  * @param level		Severity level.
  */
 void log_backend_enable(struct log_backend const *const backend,
@@ -180,4 +180,4 @@ void log_backend_disable(struct log_backend const *const backend);
 }
 #endif
 
-#endif /* LOG_CTRL_H */
+#endif /* ZEPHYR_INCLUDE_LOGGING_LOG_CTRL_H_ */

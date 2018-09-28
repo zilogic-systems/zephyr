@@ -46,6 +46,7 @@
 				reg = <0x08000000 DT_FLASH_SIZE>;
 
 				write-block-size = <8>;
+				erase-block-size = <2048>;
 			};
 		};
 
@@ -90,7 +91,7 @@
 				label = "GPIOC";
 			};
 
-			gpioh: gpio@480001c00 {
+			gpioh: gpio@48001c00 {
 				compatible = "st,stm32-gpio";
 				gpio-controller;
 				#gpio-cells = <2>;
@@ -288,6 +289,15 @@
 			sjw = <1>;
 			prop_seg_phase_seg1 = <5>;
 			phase_seg2 = <6>;
+		};
+
+		rtc: rtc@40002800 {
+			compatible = "st,stm32-rtc";
+			reg = <0x40002800 0x400>;
+			interrupts = <41 0>;
+			prescaler = <32768>;
+			status = "disabled";
+			label = "RTC_0";
 		};
 	};
 };

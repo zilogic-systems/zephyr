@@ -72,3 +72,11 @@
 		status = "ok";
 	};
 };
+
+&rtc {
+	status = "ok";
+};
+
+&usbotg_fs {
+	status = "ok";
+};

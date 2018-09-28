@@ -12,6 +12,7 @@ set(GENERATED_DTS_BOARD_H    ${PROJECT_BINARY_DIR}/include/generated/generated_d
 set(GENERATED_DTS_BOARD_CONF ${PROJECT_BINARY_DIR}/include/generated/generated_dts_board.conf)
 set_ifndef(DTS_SOURCE ${BOARD_ROOT}/boards/${ARCH}/${BOARD_FAMILY}/${BOARD}.dts)
 set_ifndef(DTS_COMMON_OVERLAYS ${ZEPHYR_BASE}/dts/common/common.dts)
+set_ifndef(DTS_APP_BINDINGS ${APPLICATION_SOURCE_DIR}/dts/bindings)
 
 message(STATUS "Generating zephyr/include/generated/generated_dts_board.h")
 
@@ -50,7 +51,7 @@ if(CONFIG_HAS_DTS)
     COMMAND ${CMAKE_C_COMPILER}
     -x assembler-with-cpp
     -nostdinc
-    -I${ZEPHYR_BASE}/arch/${ARCH}/soc
+    -I${ZEPHYR_BASE}/soc/${ARCH}
     -isystem ${ZEPHYR_BASE}/include
     -isystem ${ZEPHYR_BASE}/dts/${ARCH}
     -isystem ${ZEPHYR_BASE}/dts
@@ -89,7 +90,7 @@ if(CONFIG_HAS_DTS)
   if(EXISTS ${DTS_BOARD_FIXUP_FILE})
     set(DTS_BOARD_FIXUP ${DTS_BOARD_FIXUP_FILE})
   endif()
-  set_ifndef(DTS_SOC_FIXUP_FILE ${ZEPHYR_BASE}/arch/${ARCH}/soc/${SOC_PATH}/dts.fixup)
+  set_ifndef(DTS_SOC_FIXUP_FILE ${SOC_DIR}/${ARCH}/${SOC_PATH}/dts.fixup)
   if(EXISTS ${DTS_SOC_FIXUP_FILE})
     set(DTS_SOC_FIXUP ${DTS_SOC_FIXUP_FILE})
   endif()
@@ -102,9 +103,13 @@ if(CONFIG_HAS_DTS)
     set(DTS_FIXUPS --fixup ${DTS_FIXUPS})
   endif()
 
+  if(NOT EXISTS ${DTS_APP_BINDINGS})
+    set(DTS_APP_BINDINGS)
+  endif()
+
   set(CMD_EXTRACT_DTS_INCLUDES ${PYTHON_EXECUTABLE} ${ZEPHYR_BASE}/scripts/dts/extract_dts_includes.py
     --dts ${BOARD}.dts_compiled
-    --yaml ${ZEPHYR_BASE}/dts/bindings
+    --yaml ${ZEPHYR_BASE}/dts/bindings ${DTS_APP_BINDINGS}
     ${DTS_FIXUPS}
     --keyvalue ${GENERATED_DTS_BOARD_CONF}
     --include ${GENERATED_DTS_BOARD_H}
