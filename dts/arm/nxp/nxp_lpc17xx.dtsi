@@ -71,6 +71,32 @@
 			#gpio-cells = <2>;
 			clocks = <&clock 15 0>;
 		};
+
+		i2c0: i2c@4001C000 {
+		       compatible = "nxp,lpc17xx-i2c";
+		       reg = <0x4001C000 0x40>;
+		       interrupts = <10 3>;
+		       label = "I2C_0";
+		       clocks = <&clock 7 1>
+		};
+
+		i2c1: i2c@4001C000 {
+		       compatible = "nxp,lpc17xx-i2c";
+		       reg = <0x4005C000 0x40>;
+		       interrupts = <10 3>;
+		       label = "I2C_1";
+		       clocks = <&clock 19 1>
+		       status = "disable";
+		};
+
+		i2c2: i2c@4001C000 {
+		       compatible = "nxp,lpc17xx-i2c";
+		       reg = <0x400A0000 0x40>;
+		       interrupts = <10 3>;
+		       label = "I2C_2";
+		       clocks = <&clock 26 1>
+		       status = "disable"
+		};
 	};
 };
 

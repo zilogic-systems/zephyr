@@ -23,8 +23,7 @@ extern "C" {
 
 #ifdef CONFIG_UART_LPC17XX
 #ifdef CONFIG_UART_LPC17XX_PORT_0
-	
-#define LPC17XX_SYSCON_BASE		0x4000fc00	
+
 /* Power */
 #define LPC17XX_SYSCON_BASE   	  	0x400fc000 /* -0x400fffff: System control */
 #define LPC17XX_SYSCON_PCONP_OFFSET 	0x00c4 /* Power Control for Peripherals Register */
