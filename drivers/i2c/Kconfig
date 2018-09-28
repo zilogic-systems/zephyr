@@ -26,7 +26,7 @@ source "drivers/i2c/Kconfig.nrfx"
 source "drivers/i2c/Kconfig.qmsi"
 source "drivers/i2c/Kconfig.sbcon"
 source "drivers/i2c/Kconfig.stm32"
-
+source "drivers/i2c/Kconfig.lpc17xx"
 
 config I2C_INIT_PRIORITY
 	int "Init priority"

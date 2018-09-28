@@ -39,4 +39,11 @@ config GPIO_LPC17XX
 
 endif # GPIO
 
+if I2C
+
+config I2C_LPC17XX
+	def_bool y
+
+endif # i2C
+
 endif

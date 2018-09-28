@@ -76,6 +76,58 @@ static int zkit_arm_1769_pinmux_init(struct device *dev)
         pinmux_pin_set(pinmux, 8, pin8_miso1_config);
         pinmux_pin_set(pinmux, 9, pin9_mosi1_config);
 #endif
+
+#ifdef CONFIG_I2C_0
+        const u32_t pin0_27_sda0_config = (
+                IOCON_PIO_FUNC1  |
+                IOCON_PIO_NPUNPD |
+                IOCON_PIO_OD
+                );
+
+        const u32_t pin0_28_scl0_config = (
+                IOCON_PIO_FUNC1  |
+                IOCON_PIO_NPUNPD |
+                IOCON_PIO_OD
+                );
+
+        pinmux_pin_set(pinmux, 27, pin0_27_sda0_config);
+        pinmux_pin_set(pinmux, 28, pin0_28_scl0_config);
+#endif	
+
+#ifdef CONFIG_I2C_1
+        const u32_t pin0_0_sda1_config = (
+                IOCON_PIO_FUNC3  |
+                IOCON_PIO_NPUNPD |
+                IOCON_PIO_OD
+                );
+
+        const u32_t pin0_1_scl1_config = (
+                IOCON_PIO_FUNC3  |
+                IOCON_PIO_NPUNPD |
+                IOCON_PIO_OD
+                );
+
+        pinmux_pin_set(pinmux, 0, pin0_0_sda1_config);
+        pinmux_pin_set(pinmux, 1, pin0_1_scl1_config);
+#endif
+
+#ifdef CONFIG_I2C_2
+        const u32_t pin0_10_sda2_config = (
+                IOCON_PIO_FUNC2  |
+                IOCON_PIO_NPUNPD |
+                IOCON_PIO_OD
+                );
+
+        const u32_t pin0_11_scl2_config = (
+                IOCON_PIO_FUNC2  |
+                IOCON_PIO_NPUNPD |
+                IOCON_PIO_OD
+                );
+
+        pinmux_pin_set(pinmux, 27, pin0_10_sda2_config);
+        pinmux_pin_set(pinmux, 28, pin0_11_scl2_config);
+#endif
+	
 #endif
 
         return 0;
