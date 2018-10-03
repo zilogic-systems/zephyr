@@ -8,6 +8,7 @@ menuconfig UART_LPC17XX
 	bool "LPC17xx serial driver"
 	depends on SERIAL
 	select SERIAL_HAS_DRIVER
+	select SERIAL_SUPPORT_INTERRUPT
 	help
 	  This option enables the LPC17xx serial driver.
 
@@ -16,4 +17,11 @@ menuconfig UART_LPC17XX_PORT_0
 	depends on UART_LPC17XX
 	help
 	  Enable support for UART0 port in the driver. Say y here
+	  if you want to use UART0.
+
+menuconfig UART_LPC17XX_PORT_1
+	bool "Enable LPC17xx UART 1"
+	depends on UART_LPC17XX
+	help
+	  Enable support for UART1 port in the driver. Say y here
 	  if you want to use UART0.
