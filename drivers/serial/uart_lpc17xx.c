@@ -110,6 +110,8 @@ static void uart_lpc17xx_lcr_reg_set(struct device *dev)
 }
 static int uart_lpc17xx_init(struct device *dev)
 {
+	u32_t lock_out;
+
 	/* Enable power to UART0 */
 	clock_control_on(device_get_binding(CONFIG_CLOCK_LABEL),
 			 (clock_control_subsys_t) &(DEV_CFG(dev)->pclk));
@@ -118,7 +120,9 @@ static int uart_lpc17xx_init(struct device *dev)
 	uart_lpc17xx_lcr_reg_set(dev);
 
 	/* Set baud rate */
+	lock_out = irq_lock();
 	uart_lpc17xx_baudrate_set(dev);
+	irq_unlock(lock_out);
 
 	/* Enable FIFO,
 	 * Rx Trigger level is one character in FIFO
@@ -178,7 +182,7 @@ static int uart_lpc17xx_err_check(struct device *dev)
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 
-static inline int uart_lpc17xx_irq_fifo_fill(struct device *dev, u8_t *tx_data,
+static inline int uart_lpc17xx_irq_fifo_fill(struct device *dev, const u8_t *tx_data,
 				  int data_len)
 {
 	u8_t num_tx = 0;
