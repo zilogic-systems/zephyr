@@ -77,6 +77,7 @@ static int zkit_arm_1769_pinmux_init(struct device *dev)
 #endif
 
 #ifdef CONFIG_UART_LPC17XX_PORT_0
+	/* P0.2 , P0.3 for TXD0 and RXD0 */
 	const u32_t pin2_txd0_config = (
 		IOCON_PIO_FUNC1	|
 		IOCON_PIO_PULLUP
@@ -89,6 +90,22 @@ static int zkit_arm_1769_pinmux_init(struct device *dev)
 
 	pinmux_pin_set(pinmux, 2, pin2_txd0_config);
 	pinmux_pin_set(pinmux, 3, pin3_rxd0_config);
+#endif /*CONFIG_UART_LPC17XX_PORT_0*/
+
+#ifdef CONFIG_UART_LPC17XX_PORT_1
+	/*P2.0, P2.1 for TXD1 and RXD1 */
+	const u32_t pin64_txd1_config = (
+		IOCON_PIO_FUNC2	|
+		IOCON_PIO_PULLUP
+		);
+
+	const u32_t pin65_rxd1_config = (
+		IOCON_PIO_FUNC2 |
+		IOCON_PIO_PULLUP
+		);
+
+	pinmux_pin_set(pinmux, 64, pin64_txd1_config);
+	pinmux_pin_set(pinmux, 65, pin65_rxd1_config);
 #endif /*CONFIG_UART_LPC17XX_PORT_0*/
 
 #endif

@@ -110,8 +110,6 @@ static void uart_lpc17xx_lcr_reg_set(struct device *dev)
 }
 static int uart_lpc17xx_init(struct device *dev)
 {
-	u32_t lock_out;
-
 	/* Enable power to UART0 */
 	clock_control_on(device_get_binding(CONFIG_CLOCK_LABEL),
 			 (clock_control_subsys_t) &(DEV_CFG(dev)->pclk));
@@ -120,9 +118,7 @@ static int uart_lpc17xx_init(struct device *dev)
 	uart_lpc17xx_lcr_reg_set(dev);
 
 	/* Set baud rate */
-	lock_out = irq_lock();
 	uart_lpc17xx_baudrate_set(dev);
-	irq_unlock(lock_out);
 
 	/* Enable FIFO,
 	 * Rx Trigger level is one character in FIFO
@@ -374,4 +370,44 @@ static void irq_config_func_0(struct device *dev)
 
 #endif /* CONFIG_UART_LPC17XX_PORT_0 */
 
-/* FIXME: Enable UART1 */
+#ifdef CONFIG_UART_LPC17XX_PORT_1
+
+#ifdef CONFIG_UART_INTERRUPT_DRIVEN
+static void irq_config_func_1(struct device *dev);
+#endif
+
+static struct uart_lpc17xx_config uart1_cfg = {
+	.base = CONFIG_UART1_BASE_ADDR,
+	.pclk = {
+		.en = CONFIG_UART1_CLOCK_ENABLE,
+		.sel = CONFIG_UART1_CLOCK_SELECT
+	},
+#ifdef CONFIG_UART_INTERRUPT_DRIVEN
+	.irq_config_func = irq_config_func_1,
+#endif
+};
+
+static struct uart_lpc17xx_dev_data uart_lpc17xx_dev_data_1 = {
+	.baud_rate = CONFIG_UART1_BAUD_RATE,
+};
+
+DEVICE_AND_API_INIT(lpc17xx_uart_1, CONFIG_UART1_LABEL,
+		    &uart_lpc17xx_init,
+		    &uart_lpc17xx_dev_data_1, &uart1_cfg,
+		    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
+		    &uart_lpc17xx_driver_api);
+
+#ifdef CONFIG_UART_INTERRUPT_DRIVEN
+static void irq_config_func_1(struct device *dev)
+{
+	IRQ_CONNECT(CONFIG_UART1_IRQ,
+		    CONFIG_UART1_IRQ_PRI,
+		    uart_lpc17xx_isr, DEVICE_GET(lpc17xx_uart_1),
+		    0);
+	irq_enable(CONFIG_UART1_IRQ);
+	uart_lpc17xx_irq_rx_enable(dev);
+
+}
+#endif /* CONFIG_UART_INTERRUPT_DRIVEN */
+#endif /* CONFIG_UART_LPC17XX_PORT_1 */
+
