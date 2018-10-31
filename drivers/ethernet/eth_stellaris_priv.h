@@ -47,7 +47,7 @@
 #define BIT_MACRIS_RXINT	0x1
 #define BIT_MACRIS_TXER		0x2
 #define BIT_MACRIS_TXEMP	0x4
-#define BIT_MACRIS_RXER		0x16
+#define BIT_MACRIS_RXER		0x10
 
 struct eth_stellaris_runtime {
 	struct net_if *iface;
