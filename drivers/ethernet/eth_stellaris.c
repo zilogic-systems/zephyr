@@ -34,31 +34,6 @@ static void eth_stellaris_assign_mac(struct device *dev)
 	sys_write32(value, REG_MACIA1);
 }
 
-static int eth_stellaris_dev_init(struct device *dev)
-{
-	u32_t value;
-
-	ARG_UNUSED(dev);
-
-	/* 1. Assign MAC address to Hardware */
-	eth_stellaris_assign_mac(dev);
-
-	/* 2. Program MCRCTL to clear RXFIFO */
-	value = BIT_MACRCTL_RSTFIFO;
-	sys_write32(value, REG_MACRCTL);
-
-	/* 3. Enable transmitter */
-	value = BIT_MACTCTL_DUPLEX | BIT_MACTCTL_CRC |
-		BIT_MACTCTL_PADEN | BIT_MACTCTL_TXEN;
-	sys_write32(value, REG_MACTCTL);
-
-	/* 4. Enable Receiver */
-	value = BIT_MACRCTL_BADCRC | BIT_MACRCTL_RXEN;
-	sys_write32(value, REG_MACRCTL);
-
-	return 0;
-}
-
 static void eth_stellaris_flush(struct device *dev)
 {
 	struct eth_stellaris_runtime *dev_data = DEV_DATA(dev);
@@ -156,9 +131,8 @@ static int eth_stellaris_send(struct net_if *iface, struct net_pkt *pkt)
 
 void eth_stellaris_rx_error(struct net_if *iface)
 {
-	u32_t val;
-
 	struct device *dev = net_if_get_device(iface);
+	u32_t val;
 
 	eth_stats_update_errors_rx(iface);
 
@@ -180,6 +154,7 @@ static int eth_stellaris_rx_pkt(struct device *dev, struct net_pkt *pkt)
 	reg_val = sys_read32(REG_MACDATA);
 	frame_len = reg_val & 0x0000ffff;
 
+	/* Appending first 2 bytes of ethernet frame */
 	if (!net_pkt_append(pkt, 2, (u8_t *)&reg_val + 2, K_NO_WAIT)) {
 		return -1;
 	}
@@ -231,8 +206,9 @@ static void eth_stellaris_rx(struct device *dev)
 	}
 
 	frame_len = eth_stellaris_rx_pkt(dev, pkt);
-	if (frame_len == -1) {
-		goto err_rx;
+	if (frame_len < 0) {
+		LOG_ERR("Failed to append data to buffer");
+		goto pkt_unref;
 	}
 
 	ret = net_recv_data(iface, pkt);
@@ -256,9 +232,6 @@ static void eth_stellaris_rx(struct device *dev)
 	}
 
 	return;
-
-err_rx:
-	LOG_ERR("Failed to append data to buffer");
 
 pkt_unref:
 	net_pkt_unref(pkt);
@@ -306,14 +279,11 @@ static void rx_isr(void *arg)
 
 static void eth_stellaris_init(struct net_if *iface)
 {
-	struct device *dev;
-	struct eth_stellaris_config *dev_conf;
-	struct eth_stellaris_runtime *dev_data;
+	struct device *dev = net_if_get_device(iface);
+	struct eth_stellaris_config *dev_conf = DEV_CFG(dev);
+	struct eth_stellaris_runtime *dev_data = DEV_DATA(dev);
 
-	dev = net_if_get_device(iface);
-	dev_data = DEV_DATA(dev);
 	dev_data->iface = iface;
-	dev_conf = DEV_CFG(dev);
 
 	/* Assign link local address */
 	net_if_set_link_addr(iface,
@@ -331,6 +301,29 @@ static void eth_stellaris_init(struct net_if *iface)
 static struct net_stats_eth *eth_stellaris_stats(struct device *dev)
 {
 	return &(DEV_DATA(dev)->stats);
+}
+
+static int eth_stellaris_dev_init(struct device *dev)
+{
+	u32_t value;
+
+	/* 1. Assign MAC address to Hardware */
+	eth_stellaris_assign_mac(dev);
+
+	/* 2. Program MCRCTL to clear RXFIFO */
+	value = BIT_MACRCTL_RSTFIFO;
+	sys_write32(value, REG_MACRCTL);
+
+	/* 3. Enable transmitter */
+	value = BIT_MACTCTL_DUPLEX | BIT_MACTCTL_CRC |
+		BIT_MACTCTL_PADEN | BIT_MACTCTL_TXEN;
+	sys_write32(value, REG_MACTCTL);
+
+	/* 4. Enable Receiver */
+	value = BIT_MACRCTL_BADCRC | BIT_MACRCTL_RXEN;
+	sys_write32(value, REG_MACRCTL);
+
+	return 0;
 }
 
 static void eth_stellaris_irq_config(struct device *dev);
@@ -368,8 +361,6 @@ NET_DEVICE_INIT(eth_stellaris, CONFIG_ETH_DRV_NAME,
 
 static void eth_stellaris_irq_config(struct device *dev)
 {
-	ARG_UNUSED(dev);
-
 	/* Enable Interrupt */
 	IRQ_CONNECT(CONFIG_ETH_IRQ,
 		    CONFIG_ETH_IRQ_PRIO,
