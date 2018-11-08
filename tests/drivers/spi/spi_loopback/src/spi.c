@@ -57,7 +57,7 @@ static void to_display_format(const u8_t *src, size_t size, char *dst)
 struct spi_config spi_cfg_slow = {
 	.frequency = SLOW_FREQ,
 	.operation = SPI_OP_MODE_MASTER | SPI_MODE_CPOL |
-	SPI_MODE_CPHA | SPI_WORD_SET(8) | SPI_LINES_SINGLE,
+	SPI_MODE_CPHA | SPI_WORD_SET(8) | SPI_LINES_SINGLE | SPI_MODE_LOOP,
 	.slave = SPI_SLAVE,
 	.cs = SPI_CS,
 };
@@ -65,7 +65,7 @@ struct spi_config spi_cfg_slow = {
 struct spi_config spi_cfg_fast = {
 	.frequency = FAST_FREQ,
 	.operation = SPI_OP_MODE_MASTER | SPI_MODE_CPOL |
-	SPI_MODE_CPHA | SPI_WORD_SET(8) | SPI_LINES_SINGLE,
+	SPI_MODE_CPHA | SPI_WORD_SET(8) | SPI_LINES_SINGLE | SPI_MODE_LOOP,
 	.slave = SPI_SLAVE,
 	.cs = SPI_CS,
 };
